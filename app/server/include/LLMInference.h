@@ -1,8 +1,9 @@
 #ifndef LLMINFERENCE_H
 #define LLMINFERENCE_H
 
-#include "common.h"
+
 #include "llama.h"
+#include "common.h"
 #include <string>
 #include <vector>
 
