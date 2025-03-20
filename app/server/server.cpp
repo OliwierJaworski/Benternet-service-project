@@ -10,6 +10,14 @@ int main()
 {
     using namespace std::chrono_literals;
 
+    std::string modelPath = "../../gemma-3-1b-it-Q2_K.gguf";
+    float temperature = 1.0f;
+    float minP = 0.05f;
+    std::unique_ptr<LLMInference> llmInference = std::make_unique<LLMInference>();
+    llmInference->loadModel(modelPath, minP, temperature);
+
+    llmInference->addChatMessage("You are a helpful assistant", "system");
+
     // initialize the zmq context with a single IO thread
     zmq::context_t context{1};
 
@@ -17,8 +25,7 @@ int main()
     zmq::socket_t socket{context, zmq::socket_type::rep};
     socket.bind("tcp://*:5555");
 
-    // prepare some static data for responses
-    const std::string data{"World"};
+    std::string predicted_message ="";
     std::cout << "initialized socket etc..." << std::endl;
     for (;;) 
     {
@@ -27,12 +34,16 @@ int main()
         // receive a request from client
         socket.recv(request, zmq::recv_flags::none);
         std::cout << "Received " << request.to_string() << std::endl;
+       
+        llmInference->startCompletion(request.to_string());
 
-        // simulate work
-        std::this_thread::sleep_for(1s);
-
+        std::string predictedToken;
+        while ((predictedToken = llmInference->completionLoop()) != "[EOG]") {
+            predicted_message +=predictedToken;
+        }
         // send the reply to the client
-        socket.send(zmq::buffer(data), zmq::send_flags::none);
+        socket.send(zmq::buffer(predicted_message), zmq::send_flags::none);
+        predicted_message.clear();
     }
 
     return 0;

@@ -13,20 +13,20 @@ int main()
     socket.connect("tcp://localhost:5555");
 
     // set up some static data to send
-    const std::string data{"Hello"};
+    std::string query="";
 
-    for (auto request_num = 0; request_num < 10; ++request_num) 
+    while(1)
     {
+        std::getline(std::cin, query);
         // send the request message
-        std::cout << "Sending Hello " << request_num << "..." << std::endl;
-        socket.send(zmq::buffer(data), zmq::send_flags::none);
+        std::cout << "sending message: \""<<query <<  "\""<< std::endl;
+        socket.send(zmq::buffer(query), zmq::send_flags::none);
         
         // wait for reply from server
         zmq::message_t reply{};
         socket.recv(reply, zmq::recv_flags::none);
 
         std::cout << "Received " << reply.to_string(); 
-        std::cout << " (" << request_num << ")";
         std::cout << std::endl;
     }
 
