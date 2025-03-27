@@ -1,10 +1,20 @@
 cmake_minimum_required(VERSION 3.10.0)
 project(test VERSION 0.1.0 LANGUAGES C CXX)
 
-find_package(cppzmq)
+IF(WIN32)
+    set(ZMQ_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/external/zmq")
+    set(ZMQ_INCLUDE_DIR "${ZMQ_ROOT}/include")
+    set(ZMQ_LIB_DIR "${ZMQ_ROOT}/lib")
+ENDIF (WIN32)
 
 add_library(COMMON_LIBS INTERFACE)
-target_link_libraries(COMMON_LIBS INTERFACE cppzmq)
+
+target_include_directories(COMMON_LIBS INTERFACE ${ZMQ_INCLUDE_DIR})
+
+target_link_libraries(COMMON_LIBS INTERFACE
+    zmq 
+    zmqpp
+)
 
 set(SUB_DIRS 
     "${CMAKE_CURRENT_SOURCE_DIR}/server"

@@ -2,39 +2,35 @@
 #include <string>
 #include <chrono>
 #include <thread>
-
-#include <zmq.hpp>
 #include "LLMInference.h"
+#include "zmqpp/zmqpp.hpp"
 
-int main() 
-{
-    using namespace std::chrono_literals;
-
-    // initialize the zmq context with a single IO thread
-    zmq::context_t context{1};
-
-    // construct a REP (reply) socket and bind to interface
-    zmq::socket_t socket{context, zmq::socket_type::rep};
-    socket.bind("tcp://*:5555");
-
-    // prepare some static data for responses
-    const std::string data{"World"};
-    std::cout << "initialized socket etc..." << std::endl;
-    for (;;) 
-    {
-        zmq::message_t request;
-
-        // receive a request from client
-        socket.recv(request, zmq::recv_flags::none);
-        std::cout << "Received " << request.to_string() << std::endl;
-
-        // simulate work
-        std::this_thread::sleep_for(1s);
-
-        // send the reply to the client
-        socket.send(zmq::buffer(data), zmq::send_flags::none);
+using namespace std;
+int main(int argc, char *argv[]) {
+    const string endpoint = "tcp://*:5555";
+  
+    // initialize the 0MQ context
+    zmqpp::context context;
+  
+    // generate a pull socket
+    zmqpp::socket_type type = zmqpp::socket_type::reply;
+    zmqpp::socket socket (context, type);
+  
+    // bind to the socket
+    socket.bind(endpoint);
+    while (1) {
+      // receive the message
+      zmqpp::message message;
+      // decompose the message 
+      socket.receive(message);
+      string text;
+      message >> text;
+  
+      //Do some 'work'
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+      cout << "Received Hello" << endl;
+      socket.send("World");
     }
-
-    return 0;
-}
+  
+  }
 

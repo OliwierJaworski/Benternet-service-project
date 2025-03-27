@@ -1,34 +1,34 @@
+//  Hello World client
+#include <zmqpp/zmqpp.hpp>
 #include <string>
 #include <iostream>
 
-#include <zmq.hpp>
+using namespace std;
 
-int main()
-{
-    // initialize the zmq context with a single IO thread
-    zmq::context_t context{1};
+int main(int argc, char *argv[]) {
+  const string endpoint = "tcp://localhost:5555";
 
-    // construct a REQ (request) socket and connect to interface
-    zmq::socket_t socket{context, zmq::socket_type::req};
-    socket.connect("tcp://localhost:5555");
+  // initialize the 0MQ context
+  zmqpp::context context;
 
-    // set up some static data to send
-    const std::string data{"Hello"};
+  // generate a push socket
+  zmqpp::socket_type type = zmqpp::socket_type::req;
+  zmqpp::socket socket (context, type);
 
-    for (auto request_num = 0; request_num < 10; ++request_num) 
-    {
-        // send the request message
-        std::cout << "Sending Hello " << request_num << "..." << std::endl;
-        socket.send(zmq::buffer(data), zmq::send_flags::none);
-        
-        // wait for reply from server
-        zmq::message_t reply{};
-        socket.recv(reply, zmq::recv_flags::none);
-
-        std::cout << "Received " << reply.to_string(); 
-        std::cout << " (" << request_num << ")";
-        std::cout << std::endl;
-    }
-
-    return 0;
+  // open the connection
+  cout << "Connecting to hello world server…" << endl;
+  socket.connect(endpoint);
+  int request_nbr;
+  for (request_nbr = 0; request_nbr != 10; request_nbr++) {
+    // send a message
+    cout << "Sending Hello " << request_nbr <<"…" << endl;
+    zmqpp::message message;
+    // compose a message from a string and a number
+    message << "Hello";
+    socket.send(message);
+    string buffer;
+    socket.receive(buffer);
+    
+    cout << "Received World " << request_nbr << endl;
+  }
 }
