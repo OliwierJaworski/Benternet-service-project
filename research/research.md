@@ -35,3 +35,9 @@ source ~/.bashrc
 
 https://www.reddit.com/r/cpp/comments/11r9xni/build_systems_for_c/?rdt=44492
 https://github.com/bitmeal/vcpkg-cmake-integration
+
+------------------
+#LM studio 
+
+## implementation
+https://github.com/olrea/openai-cpp?tab=readme-ov-file
