@@ -1,10 +1,15 @@
 cmake_minimum_required(VERSION 3.10.0)
 project(test VERSION 0.1.0 LANGUAGES C CXX)
 
-find_package(cppzmq)
+find_package(cppzmq REQUIRED)
 
 add_library(COMMON_LIBS INTERFACE)
 target_link_libraries(COMMON_LIBS INTERFACE cppzmq)
+
+include_directories(COMMON_LIBS INTERFACE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/openai-cpp/include/openai
+    )
+
 
 set(SUB_DIRS 
     "${CMAKE_CURRENT_SOURCE_DIR}/server"

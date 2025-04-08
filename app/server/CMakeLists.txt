@@ -1,28 +1,27 @@
 cmake_minimum_required(VERSION 3.10.0)
 project(server_zmq VERSION 0.1.0 LANGUAGES C CXX)
 
-set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
-set(LLAMA_BUILD_COMMON On)
-set(GGML_CUDA On)
+option(CURL_STATIC_LINKING "Set to ON to build libcurl with static linking."  OFF)
 
-add_subdirectory(
-  "${CMAKE_CURRENT_SOURCE_DIR}/../external/llamacpp"  # Source directory (relative to current directory)
-  "${CMAKE_CURRENT_BINARY_DIR}/llamacpp"               # Binary directory (relative to current build directory)
-)
+if(CURL_STATIC_LINKING)
+    message("-DCURL_STATICLIB [added]")
+    add_definitions(-DCURL_STATICLIB)
+endif()
+
+add_definitions(-DJSON_USE_IMPLICIT_CONVERSIONS=0)
+
+find_package(CURL REQUIRED)
 
 add_executable(${PROJECT_NAME}  
     server.cpp
-    src/LLMInference.cpp
-)
+    )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include 
-${CMAKE_CURRENT_SOURCE_DIR}/src)
-
-set(LLM_LIBS PRIVATE
-    common llama ggml
-)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CURL_INCLUDE_DIRS}
+    )
 
 target_link_libraries(${PROJECT_NAME} 
-    ${LLM_LIBS}
     COMMON_LIBS
-)
+    ${CURL_LIBRARIES}
+    )
