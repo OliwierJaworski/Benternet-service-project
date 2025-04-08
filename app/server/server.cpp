@@ -4,7 +4,6 @@
 #include <thread>
 
 #include <zmq.hpp>
-#include "LLMInference.h"
 
 int main() 
 {
