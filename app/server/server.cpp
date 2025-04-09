@@ -5,32 +5,17 @@
 
 #include <zmq.hpp>
 #include <openai.hpp>
+#include <dnd_session.h>
 
 using namespace nlohmann;
 
 int main() 
 {
-    using namespace std::chrono_literals;
-    zmq::socket_t subsocket{context, zmq::socket_type::sub};
-    subsocket.connect("tcp://benternet.pxl-ea-ict.be:24042");
-    subsocket.setsockopt(ZMQ_SUBSCRIBE, topic_base.c_str(),topic_base.length());
-
-    //socket for sending answers
-    zmq::socket_t pushsocket{context, zmq::socket_type::push};
-    subsocket.connect("tcp://benternet.pxl-ea-ict.be:24042");
-
-    std::string chatresponse="";
-
-    // prepare some static data for responses
-    const std::string data{"World"};
-    //socket.recv(request, zmq::recv_flags::none);
-    //socket.send(zmq::buffer(chatresponse) , zmq::send_flags::none);
-    zmq::message_t request;
-
-    for (;;) 
-    {
-
-    }
-
+    dnd_session session;
+    session.sockets.at(0)->connect("tcp://benternet.pxl-ea-ict.be:24041");
+    std::string message = "theweatheris?>ss>";
+    zmq::message_t msg(message.c_str(), message.size());
+    
+    session.sockets.at(0)->socket->send(msg, zmq::send_flags::none);
     return 0;
 }

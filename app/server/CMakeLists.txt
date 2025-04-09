@@ -13,21 +13,13 @@ add_definitions(-DJSON_USE_IMPLICIT_CONVERSIONS=0)
 find_package(CURL REQUIRED)
 
 set(SRC_FILES "")
-file(GLOB ALL_CONTENTS "${CMAKE_CURRENT_SOURCE_DIR}/*")
-
-foreach(DIR IN LISTS ALL_CONTENTS)
-     if (EXISTS "${DIR}")
-         get_filename_component(EXT ${DIR} EXT)
-         if(EXT STREQUAL ".cpp" OR EXT STREQUAL ".h")
-             list(APPEND SRC_FILES "${DIR}")
-             message(STATUS "Found file: ${DIR}")
-         endif()
-     endif()
- endforeach()
+file(GLOB_RECURSE SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+file(GLOB_RECURSE HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
 
 add_executable(${PROJECT_NAME}  
     server.cpp
     ${SRC_FILES}
+    ${HEADER_FILES}
     )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include 

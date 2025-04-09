@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <cstdlib>
 #include <zmq.hpp>
 #include <nlohmann/json.hpp>
@@ -13,13 +14,14 @@
 
 using namespace nlohmann; 
 using namespace std;
+
 class dnd_session;
 struct CategorySocket;
 
 
 struct CategoryTopic{
-    void attach_socket(CategorySocket* socket);
-    string to_string()const ;
+    inline void attach_socket(CategorySocket* socket) {this->session_ = socket;}; 
+    const string to_string() const ;
 
     CategoryTopic(json topic ) : topic_{topic}{};
 private:
@@ -28,14 +30,15 @@ private:
 }; 
 
 struct CategorySocket{
-    void ondelete();
-    void ontimeout();
+    inline void connect(string endpoint){socket->connect(endpoint);};
 
     CategorySocket(dnd_session& session, json topic, zmq::socket_type type);
-private:
     const unique_ptr<zmq::socket_t> socket {nullptr};
+private:
+    
     const dnd_session& session_;
     const CategoryTopic* topic_;
+    zmq::message_t message;
 }; 
 
 struct CategoryContext{
@@ -48,12 +51,16 @@ private:
 }; 
 
 
-
-
 class dnd_session //miss ooit renamen naar gamemaster
 { 
 public:
-    const json topic_template{{"topic", "dnd_playthrough"},{"session","start?"},{"message",""},{"delim",">"}};
+    const json topic_template = R"(
+        {
+            "topic"  : "dnd_playthrough",
+            "session": "start?",
+            "message": "",
+            "delim"  : ">"
+        })"_json;
     
     std::mutex topics_lock; 
     vector<CategoryTopic> topics;
