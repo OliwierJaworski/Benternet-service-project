@@ -11,52 +11,33 @@ using namespace nlohmann;
 int main() 
 {
     using namespace std::chrono_literals;
-
-    // initialize the zmq context with a single IO thread
+    std::string topic_delimiter = ">";
+    std::string topic_base      = "dnd_playthrough";
+    std::string topic_recvStart= "start?";
+    std::string topic_sendToken = "start!";
+    std::vector<std::string> Vtopic;
     zmq::context_t context{1};
-
-    openai::start("lm-studio","",true,"http://127.0.0.1:1234/v1/");
-    std::string chatresponse="";
-
-    json uquery = R"(
-        {
-            "model": "deepseek-r1-distill-qwen-7b",
-            "messages":[{"role":"user", "content":" "}],
-            "max_tokens": 2000,
-            "temperature": 0
-        }
-        )"_json;
-
-    // construct a REP (reply) socket and bind to interface
-    zmq::socket_t socket{context, zmq::socket_type::rep};
-
-    socket.bind("tcp://*:5555");
     
+    //listening to input
+    zmq::socket_t subsocket{context, zmq::socket_type::sub};
+    subsocket.connect("tcp://benternet.pxl-ea-ict.be:24042");
+    subsocket.setsockopt(ZMQ_SUBSCRIBE, topic_base.c_str(),topic_base.length());
 
+    //socket for sending answers
+    zmq::socket_t pushsocket{context, zmq::socket_type::push};
+    subsocket.connect("tcp://benternet.pxl-ea-ict.be:24042");
 
+    std::string chatresponse="";
 
     // prepare some static data for responses
     const std::string data{"World"};
+    //socket.recv(request, zmq::recv_flags::none);
+    //socket.send(zmq::buffer(chatresponse) , zmq::send_flags::none);
+    zmq::message_t request;
 
     for (;;) 
     {
-        zmq::message_t request;
 
-        // receive a request from client
-        socket.recv(request, zmq::recv_flags::none);
-        std::cout << "Received " << request.to_string() << std::endl;
-
-        uquery["messages"].push_back({{"role","user"},{"content",request.to_string()}});
-
-        std::cout << "Received " << request.to_string() << std::endl;
-
-        auto chat = openai::chat().create(uquery);
-
-        chatresponse= chat["choices"][0]["message"]["content"].dump();
-        size_t start_conv = chatresponse.rfind("</think>");
-        chatresponse = chatresponse.substr(start_conv + std::string("</think>").length());
-
-        socket.send(zmq::buffer(chatresponse) , zmq::send_flags::none);
     }
 
     return 0;
