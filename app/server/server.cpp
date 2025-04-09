@@ -16,7 +16,6 @@ int main()
     std::string topic_recvStart= "start?";
     std::string topic_sendToken = "start!";
     std::vector<std::string> Vtopic;
-    zmq::context_t context{1};
     
     //listening to input
     zmq::socket_t subsocket{context, zmq::socket_type::sub};
