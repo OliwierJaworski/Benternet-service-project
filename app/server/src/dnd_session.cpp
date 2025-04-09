@@ -1,7 +1,7 @@
 #include "dnd_session.h"
 
 dnd_session::dnd_session(){
-    auto socket = make_unique<CategorySocket>(*this, topic_template, socket_type::push);
+    auto socket = make_unique<CategorySocket>(*this, topic_template, socket_type::sub);
     sockets.push_back(std::move(socket));;
 }
 
@@ -40,6 +40,21 @@ CategorySocket::CategorySocket(dnd_session& session, json topic, zmq::socket_typ
     }
 }
 
+void CategoryMessageSystem::PollEvents(){
+    if(zmq_poll(items.data(),items.size(),250) == -1){
+        std::cerr << "error when polling events" << std::endl;
+    }
+    for(auto item : items){
+        if(item.revents & ZMQ_POLLIN){
+
+        }
+    }
+} 
+
+void CategoryMessageSystem::PollingAddEvent(void* socket, short events =ZMQ_POLLIN ){
+    zmq::pollitem_t tmp_item {socket,0,events,0};
+    items.push_back(tmp_item);
+}
 
 
 

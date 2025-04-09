@@ -20,31 +20,47 @@ struct CategorySocket;
 
 
 struct CategoryTopic{
-    inline void attach_socket(CategorySocket* socket) {this->session_ = socket;}; 
+    void attach_socket(CategorySocket* socket) { this->session_ = socket; }; 
     const string to_string() const ;
 
-    CategoryTopic(json topic ) : topic_{topic}{};
+    CategoryTopic(json topic ) : topic_{ topic }{};
 private:
     CategorySocket* session_;
     json topic_;
 }; 
 
 struct CategorySocket{
-    inline void connect(string endpoint){socket->connect(endpoint);};
+    void connect(string endpoint){socket->connect(endpoint);};
+    zmq::recv_result_t recv(zmq::recv_flags flags) { return socket->recv(socket_buffer,flags); }
+    void send(string push_message, zmq::send_flags flags) { socket->send(zmq::buffer(push_message),flags); }
+    zmq::message_t* GetBuffer() { return &socket_buffer; } 
+    string ReadBuffer() { return socket_buffer.to_string(); }
 
     CategorySocket(dnd_session& session, json topic, zmq::socket_type type);
-    const unique_ptr<zmq::socket_t> socket {nullptr};
 private:
-    
+    const unique_ptr<zmq::socket_t> socket { nullptr };
     const dnd_session& session_;
     const CategoryTopic* topic_;
-    zmq::message_t message;
+    zmq::message_t socket_buffer;
+    //maybe socket type also as info? zmq::socket_type type;
 }; 
 
-struct CategoryContext{
-    inline zmq::context_t& get_context(){return context;};
+struct CategoryMessageSystem{
+   void PollingInit();
+   void PollEvents();
+   void PollingAddEvent(void* socket, short events =ZMQ_POLLIN );
+   void PollingRemoveEvent(){};//functionality will be added later maybe
 
-    CategoryContext(dnd_session& session) : session_{session}{};
+   CategoryMessageSystem(dnd_session& session) : session_{ session }{} 
+private:
+    const dnd_session& session_;
+    vector<zmq::pollitem_t> items;
+};
+
+struct CategoryContext{
+    zmq::context_t& get_context(){return context;};
+
+    CategoryContext(dnd_session& session) : session_{ session }{};
 private:
     const dnd_session& session_;
     zmq::context_t context{1};
@@ -62,10 +78,11 @@ public:
             "delim"  : ">"
         })"_json;
     
-    std::mutex topics_lock; 
+    std::mutex            topics_lock; 
     vector<CategoryTopic> topics;
+    CategoryContext       context { *this };
+    CategoryMessageSystem MessageSystem{ *this };
     vector<std::unique_ptr<CategorySocket>> sockets; 
-    CategoryContext context {*this};
 
     dnd_session();
     ~dnd_session();
