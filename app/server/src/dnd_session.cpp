@@ -37,12 +37,21 @@ CategorySocket::CategorySocket(dnd_session& session, json topic, zmq::socket_typ
             break;
         case socket_type::push :
             break;
-    }
+        default:
+            std::cerr << "no type case for current type" << std::endl;
+            exit(1);
+    };
+    session.MessageSystem.PollingAddEvent((void*)socket.get(),ZMQ_POLLIN);
+}
+
+CategorySocket::~CategorySocket() {
+    session_.MessageSystem.PollingRemoveEvent((void*)socket.get());
 }
 
 void CategoryMessageSystem::PollEvents(){
     if(zmq_poll(items.data(),items.size(),250) == -1){
         std::cerr << "error when polling events" << std::endl;
+        exit(1);
     }
     for(auto item : items){
         if(item.revents & ZMQ_POLLIN){
@@ -51,10 +60,20 @@ void CategoryMessageSystem::PollEvents(){
     }
 } 
 
-void CategoryMessageSystem::PollingAddEvent(void* socket, short events =ZMQ_POLLIN ){
+void CategoryMessageSystem::PollingAddEvent(void* socket, short events){
     zmq::pollitem_t tmp_item {socket,0,events,0};
     items.push_back(tmp_item);
 }
 
+void CategoryMessageSystem::PollingRemoveEvent(void* socket){
+    int position=0;
+    for(auto item : items){
+        if(item.socket == socket){
+            items.erase(items.begin()+position);;
+            return;
+        }
+        position++;
+    } 
+}
 
 

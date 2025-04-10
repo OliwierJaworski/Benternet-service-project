@@ -37,19 +37,19 @@ struct CategorySocket{
     string ReadBuffer() { return socket_buffer.to_string(); }
 
     CategorySocket(dnd_session& session, json topic, zmq::socket_type type);
+    ~CategorySocket();
 private:
-    const unique_ptr<zmq::socket_t> socket { nullptr };
-    const dnd_session& session_;
+    unique_ptr<zmq::socket_t>const socket { nullptr };
+    dnd_session& session_;
     const CategoryTopic* topic_;
     zmq::message_t socket_buffer;
     //maybe socket type also as info? zmq::socket_type type;
 }; 
 
 struct CategoryMessageSystem{
-   void PollingInit();
    void PollEvents();
    void PollingAddEvent(void* socket, short events =ZMQ_POLLIN );
-   void PollingRemoveEvent(){};//functionality will be added later maybe
+   void PollingRemoveEvent(void* socket);
 
    CategoryMessageSystem(dnd_session& session) : session_{ session }{} 
 private:
