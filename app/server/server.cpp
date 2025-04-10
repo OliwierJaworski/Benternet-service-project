@@ -10,7 +10,11 @@
 using namespace nlohmann;
 
 int main() {
-    dnd_session::start(); //start of manager instance
+    auto &session = dnd_session::start(); //start of manager instance
+    session.socket("start?",socket_type::sub);
+    session.socket("start?",socket_type::sub);
+    session.socket("idkrandom",socket_type::sub);
+    session.socket("idkrandom",socket_type::sub);
     //dnd_session::sockets(socketbysessionvalue).add();
     //dnd_session::sockets("topic").send();
 

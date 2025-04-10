@@ -67,13 +67,13 @@ CategorySocket::~CategorySocket() {
 CategorySocket& dnd_session::socket(std::string SocketID, socket_type type){
     for(auto &&currentSocket : sockets){ //accepts both rvalue and lvalue arguments & only accepts lvalue
         if(currentSocket.get()->get_session() == SocketID){
-            cout <<"socket called" << SocketID << "found!" << endl;
+            cout <<"socket called : |" << SocketID << "| found!" << endl;
             return *currentSocket;
         }
     }
-    cout <<"no socket found called: " << SocketID << ", creating new socket!" << std::endl;
+    cout <<"no socket found called: |" << SocketID << "|, creating new socket!" << std::endl;
     json tmp = topic_template;
-    tmp[0]["session"]= SocketID;
+    tmp["session"]= SocketID;
     return *create_socket(type,tmp);
 }
 
