@@ -1,5 +1,10 @@
 #include "dnd_session.h"
 
+dnd_session& dnd_session::start(){
+    static dnd_session instance;
+    return instance;
+}
+
 dnd_session::dnd_session(){
     auto socket = make_unique<CategorySocket>(*this, topic_template, socket_type::sub);
     sockets.push_back(std::move(socket));;
@@ -9,18 +14,24 @@ dnd_session::~dnd_session(){
 }
 
 const string CategoryTopic::to_string() const {
-    cout<< "in json"<< std::endl;
-    string tmp="theweatheris?>";
-    //string delim = topic_["delim"].dump();
+        std::string tmp="";
 
-    //cout<< "in json"<< "delim:" << delim <<std::endl;
+        if (isJson(topic_.dump())){
+            string delim = topic_[0]["delim"].get<string>();
 
-    //tmp += topic_["topic"].get<string>() + delim; 
-   // tmp += topic_["session"].get<string>() + delim; 
-    //tmp += topic_["message"].get<string>() + delim; 
-    return tmp; 
+            tmp += topic_[0]["topic"].get<string>() + delim; 
+            tmp += topic_[0]["session"].get<string>() + delim; 
+            tmp += (topic_[0]["message"].get<string>().empty())?"":topic_[0]["message"].get<string>() + delim ; 
+
+            cout << "to_string topic: " << tmp << std::endl; 
+            return tmp; 
+
+        }else{
+            std::cerr << "Response is not a valid JSON";
+            exit(1);
+        }
 }
-
+    
 CategorySocket::CategorySocket(dnd_session& session, json topic, zmq::socket_type type) 
 : session_(session), socket(std::make_unique<zmq::socket_t>(session.context.get_context(),type)){
 
@@ -46,6 +57,14 @@ CategorySocket::CategorySocket(dnd_session& session, json topic, zmq::socket_typ
 
 CategorySocket::~CategorySocket() {
     session_.MessageSystem.PollingRemoveEvent((void*)socket.get());
+}
+
+CategorySocket& dnd_session::socket(std::string SocketID){
+    for(auto &&currentSocket : sockets){ //accepts both rvalue and lvalue arguments & only accepts lvalue
+
+    }
+    //socketfind()-> zoek door sockets naar socket
+    //return socket;-> socket().get().set().kill()
 }
 
 void CategoryMessageSystem::PollEvents(){
@@ -74,6 +93,17 @@ void CategoryMessageSystem::PollingRemoveEvent(void* socket){
         }
         position++;
     } 
+}
+
+bool CategoryTopic::isJson(const std::string &data){
+    bool rc = true;
+    try {
+        auto json = json::parse(data); // throws if no json 
+    }
+    catch (std::exception &){
+        rc = false;
+    }
+    return(rc);
 }
 
 

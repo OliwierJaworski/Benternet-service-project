@@ -18,10 +18,10 @@ using namespace std;
 class dnd_session;
 struct CategorySocket;
 
-
 struct CategoryTopic{
     void attach_socket(CategorySocket* socket) { this->session_ = socket; }; 
     const string to_string() const ;
+    static bool isJson(const std::string &data);
 
     CategoryTopic(json topic ) : topic_{ topic }{};
 private:
@@ -35,6 +35,7 @@ struct CategorySocket{
     void send(string push_message, zmq::send_flags flags) { socket->send(zmq::buffer(push_message),flags); }
     zmq::message_t* GetBuffer() { return &socket_buffer; } 
     string ReadBuffer() { return socket_buffer.to_string(); }
+    //CategorySocket::kill()
 
     CategorySocket(dnd_session& session, json topic, zmq::socket_type type);
     ~CategorySocket();
@@ -67,26 +68,37 @@ private:
 }; 
 
 
-class dnd_session //miss ooit renamen naar gamemaster
+class dnd_session //miss ooit renamen naar gamemaster /manager
 { 
 public:
-    const json topic_template = R"(
-        {
-            "topic"  : "dnd_playthrough",
-            "session": "start?",
-            "message": "",
-            "delim"  : ">"
-        })"_json;
+    const json topic_template = {
+        {"topic", "dnd_playthrough"},
+        {"session", "start?"},
+        {"message", ""},
+        {"delim", ">"}
+    };   
     
+
+    static dnd_session& start();
+    dnd_session& instance() { return start(); }
+    CategorySocket& socket(std::string SocketID);
+
+
+    dnd_session(const dnd_session&) = delete; //remove copy constructor
+    dnd_session& operator= (const dnd_session&) = delete; //remove assignment operator 
+private:
+    dnd_session();
+    ~dnd_session();
+
+
     std::mutex            topics_lock; 
     vector<CategoryTopic> topics;
     CategoryContext       context { *this };
     CategoryMessageSystem MessageSystem{ *this };
     vector<std::unique_ptr<CategorySocket>> sockets; 
 
-    dnd_session();
-    ~dnd_session();
-private:
-    
+    friend struct CategoryMessageSystem;
+    friend struct CategoryContext;
+    friend struct CategorySocket;
 };
 using socket_type = zmq::socket_type;

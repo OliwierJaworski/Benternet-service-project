@@ -9,7 +9,8 @@
 
 using namespace nlohmann;
 
-int main() 
-{
-    dnd_session session;
+int main() {
+    dnd_session::start(); //start of manager instance
+    //dnd_session::sockets(socketbysessionvalue).add();
+    //dnd_session::sockets("topic").send();
 }
