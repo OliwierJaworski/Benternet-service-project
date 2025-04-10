@@ -6,11 +6,16 @@ dnd_session& dnd_session::start(){
 }
 
 dnd_session::dnd_session(){
-    auto socket = make_unique<CategorySocket>(*this, topic_template, socket_type::sub);
-    sockets.push_back(std::move(socket));;
+    create_socket(socket_type::sub, topic_template); //initial socket which will be listening for requests
 }
 
 dnd_session::~dnd_session(){
+}
+
+CategorySocket* dnd_session::create_socket(zmq::socket_type socktype, json topic){
+    auto socket = make_unique<CategorySocket>(*this, topic, socktype);
+    sockets.push_back(std::move(socket));
+    return sockets.back().get();
 }
 
 const string CategoryTopic::to_string() const {
@@ -59,12 +64,17 @@ CategorySocket::~CategorySocket() {
     session_.MessageSystem.PollingRemoveEvent((void*)socket.get());
 }
 
-CategorySocket& dnd_session::socket(std::string SocketID){
+CategorySocket& dnd_session::socket(std::string SocketID, socket_type type){
     for(auto &&currentSocket : sockets){ //accepts both rvalue and lvalue arguments & only accepts lvalue
-
+        if(currentSocket.get()->get_session() == SocketID){
+            cout <<"socket called" << SocketID << "found!" << endl;
+            return *currentSocket;
+        }
     }
-    //socketfind()-> zoek door sockets naar socket
-    //return socket;-> socket().get().set().kill()
+    cout <<"no socket found called: " << SocketID << ", creating new socket!" << std::endl;
+    json tmp = topic_template;
+    tmp[0]["session"]= SocketID;
+    return *create_socket(type,tmp);
 }
 
 void CategoryMessageSystem::PollEvents(){

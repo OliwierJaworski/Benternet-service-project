@@ -14,6 +14,7 @@
 
 using namespace nlohmann; 
 using namespace std;
+using socket_type = zmq::socket_type;
 
 class dnd_session;
 struct CategorySocket;
@@ -22,6 +23,7 @@ struct CategoryTopic{
     void attach_socket(CategorySocket* socket) { this->session_ = socket; }; 
     const string to_string() const ;
     static bool isJson(const std::string &data);
+    json get_topic() {return topic_;}
 
     CategoryTopic(json topic ) : topic_{ topic }{};
 private:
@@ -35,6 +37,7 @@ struct CategorySocket{
     void send(string push_message, zmq::send_flags flags) { socket->send(zmq::buffer(push_message),flags); }
     zmq::message_t* GetBuffer() { return &socket_buffer; } 
     string ReadBuffer() { return socket_buffer.to_string(); }
+    string get_session() const { return topic_->get_topic()[0]["session"].get<string>();}
     //CategorySocket::kill()
 
     CategorySocket(dnd_session& session, json topic, zmq::socket_type type);
@@ -42,7 +45,7 @@ struct CategorySocket{
 private:
     unique_ptr<zmq::socket_t>const socket { nullptr };
     dnd_session& session_;
-    const CategoryTopic* topic_;
+    CategoryTopic* topic_;
     zmq::message_t socket_buffer;
     //maybe socket type also as info? zmq::socket_type type;
 }; 
@@ -81,7 +84,7 @@ public:
 
     static dnd_session& start();
     dnd_session& instance() { return start(); }
-    CategorySocket& socket(std::string SocketID);
+    CategorySocket& socket(std::string SocketID, socket_type type = socket_type::sub); //type for if socket is not made 
 
 
     dnd_session(const dnd_session&) = delete; //remove copy constructor
@@ -90,6 +93,7 @@ private:
     dnd_session();
     ~dnd_session();
 
+    CategorySocket* create_socket(socket_type socktype, json topic);
 
     std::mutex            topics_lock; 
     vector<CategoryTopic> topics;
@@ -101,4 +105,4 @@ private:
     friend struct CategoryContext;
     friend struct CategorySocket;
 };
-using socket_type = zmq::socket_type;
+

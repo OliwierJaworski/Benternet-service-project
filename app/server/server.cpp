@@ -13,4 +13,6 @@ int main() {
     dnd_session::start(); //start of manager instance
     //dnd_session::sockets(socketbysessionvalue).add();
     //dnd_session::sockets("topic").send();
+
+    //dnd_session::socket("blabla").send("i like turtles"); err can only be performed on static ...
 }
