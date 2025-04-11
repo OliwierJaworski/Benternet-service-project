@@ -12,18 +12,16 @@ using namespace nlohmann;
 int main() {
     auto &session = dnd_session::start(); //start of manager instance
     session.socket("start?").connect("tcp://benternet.pxl-ea-ict.be:24042");
-    session.socket("start?").recv(zmq::recv_flags::none);
+    session.socket("start?").OnEvent(ZMQ_POLLIN, printcontext); //op welke event? en wat moet er gebeuren?
+    //session.socket("start?").recv(zmq::recv_flags::none); recv wordt door onevent gedaan
     std::string received_msg = session.socket("start?").ReadBuffer();
     std::cout << "----socket received: ---" << received_msg << endl; 
-    session.socket("start?",socket_type::sub);
-    session.socket("start?",socket_type::sub);
-    session.socket("idkrandom",socket_type::sub);
-    cout << "after idkrandom socket creation"  <<endl;
-    session.socket("random2",socket_type::sub);
-    cout << "after random2 socket creation"  <<endl;
-    session.socket("idkrandom",socket_type::sub);
-    //dnd_session::sockets(socketbysessionvalue).add();
-    //dnd_session::sockets("topic").send();
 
-    //dnd_session::socket("blabla").send("i like turtles"); err can only be performed on static ...
+   
+    //session.socket("start?").addevent(incoming/outgoing);
+    //polling happens in background -> controlled by manager
+}
+
+void* printcontext(){
+    printf("received message --------------------!\n");
 }

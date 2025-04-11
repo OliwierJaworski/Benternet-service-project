@@ -70,7 +70,7 @@ void CategoryMessageSystem::PollEvents(){
     }
     for(auto item : items){
         if(item.revents & ZMQ_POLLIN){
-
+            //callback needs to get fired
         }
     }
 } 

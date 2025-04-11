@@ -16,6 +16,8 @@ using namespace nlohmann;
 using namespace std;
 using socket_type = zmq::socket_type;
 
+typedef void*(*_Pollevent_cb)();
+
 class dnd_session;
 struct CategorySocket;
 
@@ -38,6 +40,7 @@ struct CategorySocket{
     zmq::message_t& GetBuffer() { return socket_buffer; } 
     string ReadBuffer() { return socket_buffer.to_string(); }
     string get_session() const { return topic_->get_topic()["session"].get<string>();}
+    void OnEvent(short eventtype, _Pollevent_cb cb);
     //CategorySocket::kill()
 
     CategorySocket(dnd_session& session, json topic, zmq::socket_type type);
