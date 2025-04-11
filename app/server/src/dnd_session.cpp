@@ -94,7 +94,6 @@ void CategoryMessageSystem::PollingRemoveEvent(void* socket){
 string CategoryTopic::to_string(){
     std::string tmp="";
     topic_= topic_[0]; // weird behavior where json object is changed to arr of objects this is workaround :/
-    cout << "topic dump inside to_string:" << topic_.dump() <<endl;
     
     if (topic_.is_object()){
         string delim = topic_["delim"].get<string>();

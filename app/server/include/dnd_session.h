@@ -37,7 +37,7 @@ struct CategorySocket{
     void send(string push_message, zmq::send_flags flags) { socket->send(zmq::buffer(push_message),flags); }
     zmq::message_t* GetBuffer() { return &socket_buffer; } 
     string ReadBuffer() { return socket_buffer.to_string(); }
-    string get_session() const { return topic_->get_topic()["session"].dump();}
+    string get_session() const { return topic_->get_topic()["session"].get<string>();}
     //CategorySocket::kill()
 
     CategorySocket(dnd_session& session, json topic, zmq::socket_type type);
