@@ -65,38 +65,37 @@ CategorySocket::~CategorySocket() {
 void CategorySocket::OnEvent(short eventtype, _Pollevent_cb cb){
     cout << "creating socket event" << std::endl;
     std::lock_guard<std::mutex> lock(session_.event_lock); //lock so the event thread has to wait 
-    session_.MessageSystem.PollingAddEvent(socket.get()->handle(),eventtype); //socket descriptor needed not ptr...
+    session_.MessageSystem.PollingAddEvent(socket.get()->handle(),eventtype,cb); //socket descriptor needed not ptr...
     cout << "leaving socket event creation" << std::endl;
 }
 
 
 void CategoryMessageSystem::PollEvents(){
-    cout << "polling from event poolsize:" << items.size() << endl;
+    cout << "polling from event poolsize:" << items_.size();
     try{
-        if(zmq::poll(items,std::chrono::seconds(-1) ) == -1){
+        if(zmq::poll(items_, std::chrono::seconds(-1)) == -1){
 
         }
     }catch(...)
     {
         std::exception_ptr p = std::current_exception();
         std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
+        exit(1);
     }
-    for(auto item : items){
+    
+    int index =0;
+    for(auto item : items_){
         if(item.revents & item.events){
-            cout << " received ZMQ_POLLIN event! <------------------" << endl;
+           (void)cbs_.at(index)();
         }
+        index++;
     }
 }
 
-void CategoryMessageSystem::PollingAddEvent(void* socket, short events){
-    zmq::pollitem_t tmp;
-
-    tmp.socket= socket;
-    tmp.events=events;
-    tmp.fd=0;
-    tmp.revents=0;
-
-    items.push_back(tmp);
+void CategoryMessageSystem::PollingAddEvent(void* socket, short events, _Pollevent_cb cb_){
+    zmq::pollitem_t tmp{ .socket=socket, .fd=0 ,.events=events,.revents=0};
+    cbs_.push_back(cb_);
+    items_.push_back(tmp);
 } 
 
 void CategoryMessageSystem::PollingRemoveEvent(void* socket){
@@ -133,5 +132,6 @@ bool CategoryTopic::isJson(const std::string &data){
     }
     return(rc);
 }
+
 
 

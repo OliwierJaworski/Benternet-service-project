@@ -57,15 +57,17 @@ private:
     //maybe socket type also as info? zmq::socket_type type;
 }; 
 
+
 struct CategoryMessageSystem{
    void PollEvents();
-   void PollingAddEvent(void* socket, short events =ZMQ_POLLIN );
+   void PollingAddEvent(void* socket, short events =ZMQ_POLLIN, _Pollevent_cb cb_  = nullptr);
    void PollingRemoveEvent(void* socket);
 
    CategoryMessageSystem(dnd_session& session) : session_{ session }{} 
 private:
     dnd_session& session_;
-    std::vector<zmq::pollitem_t> items;
+    std::vector<_Pollevent_cb> cbs_;
+    std::vector<zmq::pollitem_t > items_;
 };
 
 struct CategoryContext{
