@@ -9,18 +9,24 @@
 
 using namespace nlohmann;
 
-void* printcontext();
-
+void* printcontextz();
+void* printcontexts();
 int main() {
     auto &session = dnd_session::start(); //start of manager instance
     session.socket("start?").connect("tcp://benternet.pxl-ea-ict.be:24042");
-    session.socket("start?").OnEvent(ZMQ_POLLIN, printcontext); //op welke event? en wat moet er gebeuren?
+    session.socket("start?").OnEvent(ZMQ_POLLIN, printcontextz); //op welke event? en wat moet er gebeuren?
     session.socket("start!").connect("tcp://benternet.pxl-ea-ict.be:24042");
-    session.socket("start!").OnEvent(ZMQ_POLLIN, printcontext); //op welke event? en wat moet er gebeuren?
-    session.polling();
+    session.socket("start!").OnEvent(ZMQ_POLLIN, printcontexts); //op welke event? en wat moet er gebeuren?
+    while(1){
+        session.polling();
+    }   
 }
 
-void* printcontext(){
-    printf("received message --------------------!\n");
+void* printcontextz(){
+    printf("-- start? --> fired\n");
+    return nullptr;
+}
+void* printcontexts(){
+    printf("-- start! --> fired\n");
     return nullptr;
 }

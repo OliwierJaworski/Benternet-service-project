@@ -73,7 +73,7 @@ void CategorySocket::OnEvent(short eventtype, _Pollevent_cb cb){
 void CategoryMessageSystem::PollEvents(){
     cout << "polling from event poolsize:" << items_.size();
     try{
-        if(zmq::poll(items_, std::chrono::seconds(-1)) == -1){
+        if(zmq::poll(items_, std::chrono::milliseconds(100)) == -1){
 
         }
     }catch(...)
@@ -84,10 +84,11 @@ void CategoryMessageSystem::PollEvents(){
     }
     
     int index =0;
-    for(auto item : items_){
+    for(auto& item : items_){
         if(item.revents & item.events){
            (void)cbs_.at(index)();
         }
+        item.revents=0;
         index++;
     }
 }
