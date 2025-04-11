@@ -21,11 +21,11 @@ struct CategorySocket;
 
 struct CategoryTopic{
     void attach_socket(CategorySocket* socket) { this->session_ = socket; }; 
-    const string to_string() const ;
+    string to_string() ;
     static bool isJson(const std::string &data);
-    json get_topic() {return topic_;}
+    json& get_topic() {return topic_;}
 
-    CategoryTopic(json topic ) : topic_{ topic }{};
+    CategoryTopic(json topic ) : topic_{ topic } {};
 private:
     CategorySocket* session_;
     json topic_;
@@ -37,7 +37,7 @@ struct CategorySocket{
     void send(string push_message, zmq::send_flags flags) { socket->send(zmq::buffer(push_message),flags); }
     zmq::message_t* GetBuffer() { return &socket_buffer; } 
     string ReadBuffer() { return socket_buffer.to_string(); }
-    string get_session() const { return topic_->get_topic()[0]["session"].get<string>();}
+    string get_session() const { return topic_->get_topic()["session"].dump();}
     //CategorySocket::kill()
 
     CategorySocket(dnd_session& session, json topic, zmq::socket_type type);
@@ -45,7 +45,7 @@ struct CategorySocket{
 private:
     unique_ptr<zmq::socket_t>const socket { nullptr };
     dnd_session& session_;
-    CategoryTopic* topic_;
+    shared_ptr<CategoryTopic> topic_;
     zmq::message_t socket_buffer;
     //maybe socket type also as info? zmq::socket_type type;
 }; 
@@ -74,13 +74,7 @@ private:
 class dnd_session //miss ooit renamen naar gamemaster /manager
 { 
 public:
-    const json topic_template = {
-        {"topic", "dnd_playthrough"},
-        {"session", "start?"},
-        {"message", ""},
-        {"delim", ">"}
-    };   
-    
+    json topic_template = {{"topic", "dnd_session"}, {"session", "start?"}, {"message",""}, {"delim", ">"}};   
 
     static dnd_session& start();
     dnd_session& instance() { return start(); }
@@ -96,9 +90,9 @@ private:
     CategorySocket* create_socket(socket_type socktype, json topic);
 
     std::mutex            topics_lock; 
-    vector<CategoryTopic> topics;
     CategoryContext       context { *this };
     CategoryMessageSystem MessageSystem{ *this };
+    vector<shared_ptr<CategoryTopic>>       topics; //shared ptr vector for dereference of topic from vector
     vector<std::unique_ptr<CategorySocket>> sockets; 
 
     friend struct CategoryMessageSystem;

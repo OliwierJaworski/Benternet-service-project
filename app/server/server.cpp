@@ -14,6 +14,9 @@ int main() {
     session.socket("start?",socket_type::sub);
     session.socket("start?",socket_type::sub);
     session.socket("idkrandom",socket_type::sub);
+    cout << "after idkrandom socket creation"  <<endl;
+    session.socket("random2",socket_type::sub);
+    cout << "after random2 socket creation"  <<endl;
     session.socket("idkrandom",socket_type::sub);
     //dnd_session::sockets(socketbysessionvalue).add();
     //dnd_session::sockets("topic").send();

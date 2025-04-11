@@ -18,31 +18,28 @@ CategorySocket* dnd_session::create_socket(zmq::socket_type socktype, json topic
     return sockets.back().get();
 }
 
-const string CategoryTopic::to_string() const {
-        std::string tmp="";
-
-        if (isJson(topic_.dump())){
-            string delim = topic_[0]["delim"].get<string>();
-
-            tmp += topic_[0]["topic"].get<string>() + delim; 
-            tmp += topic_[0]["session"].get<string>() + delim; 
-            tmp += (topic_[0]["message"].get<string>().empty())?"":topic_[0]["message"].get<string>() + delim ; 
-
-            cout << "to_string topic: " << tmp << std::endl; 
-            return tmp; 
-
-        }else{
-            std::cerr << "Response is not a valid JSON";
-            exit(1);
+CategorySocket& dnd_session::socket(std::string SocketID, socket_type type){
+    for(auto &&currentSocket : sockets){ //accepts both rvalue and lvalue arguments & only accepts lvalue
+        cout << "checking for socket session"<< currentSocket.get()->get_session() << endl;
+        if(currentSocket.get()->get_session() == SocketID){ //--> error is here 
+            cout <<"socket called : |" << SocketID << "| found!" << endl;
+            return *currentSocket;
         }
+    }
+    
+    cout <<"no socket found called: |" << SocketID << "|, creating new socket!" << std::endl;
+    json tmp = topic_template;
+    tmp["session"]= SocketID;
+    return *create_socket(type,tmp);
 }
     
 CategorySocket::CategorySocket(dnd_session& session, json topic, zmq::socket_type type) 
 : session_(session), socket(std::make_unique<zmq::socket_t>(session.context.get_context(),type)){
-
+     
     std::lock_guard<std::mutex> lock(session.topics_lock);
-    session.topics.push_back(CategoryTopic(topic));
-    topic_ = &session.topics.back();
+    topic_ =  make_unique<CategoryTopic>(topic); //fixed misalignment by making shared ptr
+    session.topics.push_back(topic_);
+   
 
     string tmp = topic_->to_string();
     switch(type){
@@ -64,18 +61,7 @@ CategorySocket::~CategorySocket() {
     session_.MessageSystem.PollingRemoveEvent((void*)socket.get());
 }
 
-CategorySocket& dnd_session::socket(std::string SocketID, socket_type type){
-    for(auto &&currentSocket : sockets){ //accepts both rvalue and lvalue arguments & only accepts lvalue
-        if(currentSocket.get()->get_session() == SocketID){
-            cout <<"socket called : |" << SocketID << "| found!" << endl;
-            return *currentSocket;
-        }
-    }
-    cout <<"no socket found called: |" << SocketID << "|, creating new socket!" << std::endl;
-    json tmp = topic_template;
-    tmp["session"]= SocketID;
-    return *create_socket(type,tmp);
-}
+
 
 void CategoryMessageSystem::PollEvents(){
     if(zmq_poll(items.data(),items.size(),250) == -1){
@@ -104,6 +90,28 @@ void CategoryMessageSystem::PollingRemoveEvent(void* socket){
         position++;
     } 
 }
+
+string CategoryTopic::to_string(){
+    std::string tmp="";
+    topic_= topic_[0]; // weird behavior where json object is changed to arr of objects this is workaround :/
+    cout << "topic dump inside to_string:" << topic_.dump() <<endl;
+    
+    if (topic_.is_object()){
+        string delim = topic_["delim"].get<string>();
+
+        tmp += topic_["topic"].get<string>() + delim; 
+        tmp += topic_["session"].get<string>() + delim; 
+        tmp += (topic_["message"].get<string>().empty())?"":topic_["message"].get<string>() + delim ; 
+
+        cout << "to_string topic: " << tmp << std::endl; 
+        return tmp; 
+
+    }else{
+        std::cerr << "where " << "| CategoryTopic::to_string() |" <<" Response is not a valid object";
+        exit(1);
+    }
+}
+
 
 bool CategoryTopic::isJson(const std::string &data){
     bool rc = true;
