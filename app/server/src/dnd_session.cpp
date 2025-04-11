@@ -54,41 +54,46 @@ CategorySocket::CategorySocket(dnd_session& session, json topic, zmq::socket_typ
             std::cerr << "no type case for current type" << std::endl;
             exit(1);
     };
-    session.MessageSystem.PollingAddEvent((void*)socket.get(),ZMQ_POLLIN);
+    //session.MessageSystem.PollingAddEvent(socket.get(),ZMQ_POLLIN);
 }
 
 CategorySocket::~CategorySocket() {
+    std::lock_guard<std::mutex> lock(session_.event_lock); //lock so the event thread has to wait 
     session_.MessageSystem.PollingRemoveEvent((void*)socket.get());
 }
 
+void CategorySocket::OnEvent(short eventtype, _Pollevent_cb cb){
+    cout << "creating socket event" << std::endl;
+    std::lock_guard<std::mutex> lock(session_.event_lock); //lock so the event thread has to wait 
+    session_.MessageSystem.PollingAddEvent(socket.get()->handle(),eventtype); //socket descriptor needed not ptr...
+    cout << "leaving socket event creation" << std::endl;
+}
 
 
 void CategoryMessageSystem::PollEvents(){
-    if(zmq_poll(items.data(),items.size(),250) == -1){
-        std::cerr << "error when polling events" << std::endl;
-        exit(1);
+    cout << "polling from event poolsize:" << items.size() << endl;
+    if(zmq::poll(items,std::chrono::seconds(-1) ) == -1){
+
     }
     for(auto item : items){
-        if(item.revents & ZMQ_POLLIN){
-            //callback needs to get fired
+        if(item.revents & item.events){
+            cout << " received ZMQ_POLLIN event! <------------------" << endl;
         }
     }
-} 
-
-void CategoryMessageSystem::PollingAddEvent(void* socket, short events){
-    zmq::pollitem_t tmp_item {socket,0,events,0};
-    items.push_back(tmp_item);
 }
 
+void CategoryMessageSystem::PollingAddEvent(void* socket, short events){
+    zmq::pollitem_t tmp;
+
+    tmp.socket= socket;
+    tmp.events=events;
+    tmp.fd=0;
+    tmp.revents=0;
+
+    items.push_back(tmp);
+} 
+
 void CategoryMessageSystem::PollingRemoveEvent(void* socket){
-    int position=0;
-    for(auto item : items){
-        if(item.socket == socket){
-            items.erase(items.begin()+position);;
-            return;
-        }
-        position++;
-    } 
 }
 
 string CategoryTopic::to_string(){

@@ -5,6 +5,10 @@
 #include <zmq.hpp>
 #include <nlohmann/json.hpp>
 #include <mutex>
+#include <thread>
+
+
+
 #ifdef __linux__
 #elif _WIN32 
 #else
@@ -23,7 +27,7 @@ struct CategorySocket;
 
 struct CategoryTopic{
     void attach_socket(CategorySocket* socket) { this->session_ = socket; }; 
-    string to_string() ;
+    string to_string();
     static bool isJson(const std::string &data);
     json& get_topic() {return topic_;}
 
@@ -36,17 +40,17 @@ private:
 struct CategorySocket{
     void connect(string endpoint){socket->connect(endpoint);};
     zmq::recv_result_t recv(zmq::recv_flags flags) { return socket->recv(socket_buffer,flags); }
-    zmq::recv_result_t send(string push_message, zmq::send_flags flags) { socket->send(zmq::buffer(push_message),flags); }
+    zmq::recv_result_t send(string push_message, zmq::send_flags flags) { return socket->send(zmq::buffer(push_message),flags); }
     zmq::message_t& GetBuffer() { return socket_buffer; } 
     string ReadBuffer() { return socket_buffer.to_string(); }
     string get_session() const { return topic_->get_topic()["session"].get<string>();}
-    void OnEvent(short eventtype, _Pollevent_cb cb);
+    void OnEvent(short eventtype, _Pollevent_cb cb = nullptr);
     //CategorySocket::kill()
 
     CategorySocket(dnd_session& session, json topic, zmq::socket_type type);
     ~CategorySocket();
 private:
-    unique_ptr<zmq::socket_t>const socket { nullptr };
+    unique_ptr<zmq::socket_t>const socket ;//{ nullptr };
     dnd_session& session_;
     shared_ptr<CategoryTopic> topic_;
     zmq::message_t socket_buffer;
@@ -60,8 +64,8 @@ struct CategoryMessageSystem{
 
    CategoryMessageSystem(dnd_session& session) : session_{ session }{} 
 private:
-    const dnd_session& session_;
-    vector<zmq::pollitem_t> items;
+    dnd_session& session_;
+    std::vector<zmq::pollitem_t> items;
 };
 
 struct CategoryContext{
@@ -80,8 +84,9 @@ public:
     json topic_template = {{"topic", "dnd_session"}, {"session", "start?"}, {"message",""}, {"delim", ">"}};   
 
     static dnd_session& start();
-    dnd_session& instance() { return start(); }
+    dnd_session& instance() { return start(); }//not static so wont work for now 
     CategorySocket& socket(std::string SocketID, socket_type type = socket_type::sub); //type for if socket is not made 
+    void polling(){MessageSystem.PollEvents();}
 
 
     dnd_session(const dnd_session&) = delete; //remove copy constructor
@@ -92,11 +97,13 @@ private:
 
     CategorySocket* create_socket(socket_type socktype, json topic);
 
+    std::mutex            event_lock;
     std::mutex            topics_lock; 
     CategoryContext       context { *this };
     CategoryMessageSystem MessageSystem{ *this };
     vector<shared_ptr<CategoryTopic>>       topics; //shared ptr vector for dereference of topic from vector
     vector<std::unique_ptr<CategorySocket>> sockets; 
+    std::vector<std::thread> thread_list;
 
     friend struct CategoryMessageSystem;
     friend struct CategoryContext;

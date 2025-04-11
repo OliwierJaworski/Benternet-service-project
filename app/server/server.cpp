@@ -9,11 +9,14 @@
 
 using namespace nlohmann;
 
+void* printcontext();
+
 int main() {
     auto &session = dnd_session::start(); //start of manager instance
     session.socket("start?").connect("tcp://benternet.pxl-ea-ict.be:24042");
     session.socket("start?").OnEvent(ZMQ_POLLIN, printcontext); //op welke event? en wat moet er gebeuren?
     //session.socket("start?").recv(zmq::recv_flags::none); recv wordt door onevent gedaan
+    session.polling();
     std::string received_msg = session.socket("start?").ReadBuffer();
     std::cout << "----socket received: ---" << received_msg << endl; 
 
@@ -24,4 +27,5 @@ int main() {
 
 void* printcontext(){
     printf("received message --------------------!\n");
+    return nullptr;
 }
