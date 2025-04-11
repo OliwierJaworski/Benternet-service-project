@@ -72,8 +72,14 @@ void CategorySocket::OnEvent(short eventtype, _Pollevent_cb cb){
 
 void CategoryMessageSystem::PollEvents(){
     cout << "polling from event poolsize:" << items.size() << endl;
-    if(zmq::poll(items,std::chrono::seconds(-1) ) == -1){
+    try{
+        if(zmq::poll(items,std::chrono::seconds(-1) ) == -1){
 
+        }
+    }catch(...)
+    {
+        std::exception_ptr p = std::current_exception();
+        std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
     }
     for(auto item : items){
         if(item.revents & item.events){
