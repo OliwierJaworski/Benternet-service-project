@@ -89,6 +89,7 @@ void CategoryMessageSystem::PollEvents(){
         if(item.revents & item.events){
            (void)cbs_.at(index)();
         }
+        item.revents=0;
         index++;
     }
 }
