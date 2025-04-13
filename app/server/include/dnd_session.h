@@ -6,7 +6,7 @@
 #include <nlohmann/json.hpp>
 #include <mutex>
 #include <thread>
-
+#include <cstdlib>
 
 
 #ifdef __linux__
@@ -16,100 +16,91 @@
     exit(1); //not made for apple normies 
 #endif
 
-using namespace nlohmann; 
 using namespace std;
-using socket_type = zmq::socket_type;
+using namespace nlohmann;
+
+namespace Benternet{
+
+class chat_manager;
 
 
-class dnd_session;
-struct CategorySocket;
+struct Socket_t{
+    zmq::recv_result_t recv() {}
+    zmq::recv_result_t send() {} 
+    json& GetTopic(){return topic_;}
 
-typedef void*(*_Pollevent_cb)(CategorySocket& socket);
+    Socket_t(json topic, zmq::socket_type type): topic_{topic}, socktype_{type} {}
+    ~Socket_t(){}
+private:
+    zmq::socket_t socket_;
+    zmq::socket_type socktype_;
+    json topic_;
+};
 
 struct CategoryTopic{
-    void attach_socket(CategorySocket* socket) { this->session_ = socket; }; 
-    string to_string();
-    static bool isJson(const std::string &data);
-    json& get_topic() {return topic_;}
+    static string Get_Topic(json& object)   { return object["topic"].get<string>(); }
+    static string Get_Session(json& object) { return object["session"].get<string>(); }
+    static string Get_Message(json& object) { return object["message"].get<string>(); }
+    static string Get_Delim(json& object)   { return object["delim"].get<string>(); }
+    static json Get_Template()      { return topic_template; }
 
-    CategoryTopic(json topic ) : topic_{ topic } {};
+    CategoryTopic(chat_manager& session) : session_{session}  {}
+    ~CategoryTopic(){}
 private:
-    CategorySocket* session_;
-    json topic_;
-}; 
+    chat_manager& session_;
+    inline static const json topic_template{{"topic", "dnd_session"}, {"session", "start?"}, {"message",""}, {"delim", ">"}};
+};
+
+struct CategoryEvents{
+    void PollEvents();
+    void PollAddEvent();
+    void PollRemoveEvent();
+
+    CategoryEvents(chat_manager& session) : session_{session} {}
+    ~CategoryEvents(){}
+private:
+    chat_manager& session_;
+
+};
 
 struct CategorySocket{
-    void connect(string endpoint){socket->connect(endpoint);};
-    zmq::recv_result_t recv(zmq::recv_flags flags) { return socket->recv(socket_buffer,flags); }
-    zmq::recv_result_t send(string push_message, zmq::send_flags flags) { return socket->send(zmq::buffer(push_message),flags); }
-    zmq::message_t& GetBuffer() { return socket_buffer; } 
-    string ReadBuffer() { return socket_buffer.to_string(); }
-    string get_session() const { return topic_->get_topic()["session"].get<string>();}
-    void OnEvent(short eventtype, _Pollevent_cb cb = nullptr);
-    //CategorySocket::kill()
+    void list(); //list all sockets and their state active /offline etc..
+    shared_ptr<Socket_t> create(json topic, zmq::socket_type type);
 
-    CategorySocket(dnd_session& session, json topic, zmq::socket_type type);
-    ~CategorySocket();
+    CategorySocket(chat_manager& session) : session_{session} {}
+    ~CategorySocket() {}
 private:
-    unique_ptr<zmq::socket_t>const socket ;//{ nullptr };
-    dnd_session& session_;
-    shared_ptr<CategoryTopic> topic_;
-    zmq::message_t socket_buffer;
-    zmq::socket_type socktype;
-}; 
-
-
-struct CategoryMessageSystem{
-   void PollEvents();
-   void PollingAddEvent(void* socket, short events =ZMQ_POLLIN, _Pollevent_cb cb_  = nullptr);
-   void PollingRemoveEvent(void* socket);
-
-   CategoryMessageSystem(dnd_session& session) : session_{ session }{} 
-private:
-    dnd_session& session_;
-    std::vector<_Pollevent_cb> cbs_;
-    std::vector<zmq::pollitem_t > items_;
+    chat_manager& session_;
+    vector<shared_ptr< Socket_t >> sockets_V;
 };
 
 struct CategoryContext{
     zmq::context_t& get_context(){return context;};
 
-    CategoryContext(dnd_session& session) : session_{ session }{};
+    CategoryContext(chat_manager& session) : session_{ session }{};
 private:
-    const dnd_session& session_;
+    const chat_manager& session_;
     zmq::context_t context{1};
-}; 
-
-
-class dnd_session //miss ooit renamen naar gamemaster /manager
-{ 
-public:
-    json topic_template = {{"topic", "dnd_session"}, {"session", "start?"}, {"message",""}, {"delim", ">"}};   
-
-    static dnd_session& start();
-    dnd_session& instance() { return start(); }//not static so wont work for now 
-    CategorySocket& socket(std::string SocketID, socket_type type = socket_type::sub); //type for if socket is not made 
-    void polling(){MessageSystem.PollEvents();}
-
-
-    dnd_session(const dnd_session&) = delete; //remove copy constructor
-    dnd_session& operator= (const dnd_session&) = delete; //remove assignment operator 
-private:
-    dnd_session();
-    ~dnd_session();
-
-    CategorySocket* create_socket(socket_type socktype, json topic);
-
-    std::mutex            event_lock;
-    std::mutex            topics_lock; 
-    CategoryContext       context { *this };
-    CategoryMessageSystem MessageSystem{ *this };
-    vector<shared_ptr<CategoryTopic>>       topics; //shared ptr vector for dereference of topic from vector
-    vector<std::unique_ptr<CategorySocket>> sockets; 
-    std::vector<std::thread> thread_list;
-
-    friend struct CategoryMessageSystem;
-    friend struct CategoryContext;
-    friend struct CategorySocket;
 };
 
+
+class chat_manager{ 
+
+    CategorySocket      sockets {*this}; 
+    CategoryTopic       topics  {*this};
+    CategoryEvents      events  {*this};
+    CategoryContext     context {*this};
+
+    chat_manager(const chat_manager&) = delete; //copy constructor deleted for singleton pattern
+    chat_manager& operator= (const chat_manager&) = delete; //assignment operator deleted for singleton pattern
+
+    chat_manager();
+    ~chat_manager();
+public:
+
+   static chat_manager& instance();
+   Socket_t& Socket(string endpoint, zmq::socket_type type, string session, string topic = "dnd_session");
+   const void list_sockets() {sockets.list();}
+};
+
+}
