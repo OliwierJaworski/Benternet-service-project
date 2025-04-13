@@ -20,10 +20,11 @@ using namespace nlohmann;
 using namespace std;
 using socket_type = zmq::socket_type;
 
-typedef void*(*_Pollevent_cb)();
 
 class dnd_session;
 struct CategorySocket;
+
+typedef void*(*_Pollevent_cb)(CategorySocket& socket);
 
 struct CategoryTopic{
     void attach_socket(CategorySocket* socket) { this->session_ = socket; }; 
@@ -54,7 +55,7 @@ private:
     dnd_session& session_;
     shared_ptr<CategoryTopic> topic_;
     zmq::message_t socket_buffer;
-    //maybe socket type also as info? zmq::socket_type type;
+    zmq::socket_type socktype;
 }; 
 
 

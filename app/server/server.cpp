@@ -9,8 +9,9 @@
 
 using namespace nlohmann;
 
-void* printcontextz();
-void* printcontexts();
+void* printcontextz(CategorySocket& socket);
+void* printcontexts(CategorySocket& socket);
+
 int main() {
     auto &session = dnd_session::start(); //start of manager instance
     session.socket("start?").connect("tcp://benternet.pxl-ea-ict.be:24042");
@@ -22,11 +23,11 @@ int main() {
     }   
 }
 
-void* printcontextz(){
+void* printcontextz(CategorySocket& socket){
     printf("-- start? --> fired\n");
     return nullptr;
 }
-void* printcontexts(){
+void* printcontexts(CategorySocket& socket){
     printf("-- start! --> fired\n");
     return nullptr;
 }

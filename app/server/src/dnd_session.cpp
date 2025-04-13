@@ -21,7 +21,7 @@ CategorySocket* dnd_session::create_socket(zmq::socket_type socktype, json topic
 CategorySocket& dnd_session::socket(std::string SocketID, socket_type type){
     for(auto &&currentSocket : sockets){ //accepts both rvalue and lvalue arguments & only accepts lvalue
         cout << "checking for socket session"<< currentSocket.get()->get_session() << endl;
-        if(currentSocket.get()->get_session() == SocketID){ //--> error is here 
+        if(currentSocket.get()->get_session() == SocketID){ 
             cout <<"socket called : |" << SocketID << "| found!" << endl;
             return *currentSocket;
         }
@@ -39,6 +39,7 @@ CategorySocket::CategorySocket(dnd_session& session, json topic, zmq::socket_typ
     std::lock_guard<std::mutex> lock(session.topics_lock);
     topic_ =  make_unique<CategoryTopic>(topic); //fixed misalignment by making shared ptr
     session.topics.push_back(topic_);
+    socktype = type;
    
 
     string tmp = topic_->to_string();
@@ -88,7 +89,6 @@ void CategoryMessageSystem::PollEvents(){
         if(item.revents & item.events){
            (void)cbs_.at(index)();
         }
-        item.revents=0;
         index++;
     }
 }
