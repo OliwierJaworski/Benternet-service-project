@@ -11,6 +11,17 @@
 using namespace Benternet;
 
 int main() {
-    chat_manager::instance();
+    chat_manager::instance().Socket("start?",zmq::socket_type::sub); //create socket instance
+    chat_manager::instance().Socket("start?",zmq::socket_type::sub); //see if socket is found
+    chat_manager::instance().Socket("start?").Connect("tcp://localhost:5555"); //connect to server
+    chat_manager::instance().Socket("start?").AddEvent(ZMQ_POLLIN,nullptr); //rip als iemand dit doet
+
+    chat_manager::instance().Socket("start!",zmq::socket_type::sub); //create 2nd socket instance
+    chat_manager::instance().Socket("start!",zmq::socket_type::sub); //see if socket is found
+    chat_manager::instance().Socket("start!").Connect("tcp://localhost:5555"); //connect to server
+
+    chat_manager::instance().Socket("start*",zmq::socket_type::sub); //create 2nd socket instance
+    chat_manager::instance().Socket("start*",zmq::socket_type::sub); //see if socket is found
+    chat_manager::instance().Socket("start*").Connect("tcp://localhost:5555"); //connect to server
 }
 

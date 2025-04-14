@@ -22,24 +22,30 @@ using namespace nlohmann;
 namespace Benternet{
 
 class chat_manager;
+struct CategorySocket;
 
-typedef void*(*_Pollevent_cb)();
+typedef string& (*_Pollevent_cb)(string* message);
 
 struct Socket_t{
-    zmq::recv_result_t recv() {}
-    zmq::recv_result_t send() {} 
-    json& GetTopic(){return topic_;}
-    void OnEvent(short eventtype, _Pollevent_cb cb_);
-    void OnConnect(string endpoint) { socket_.connect(endpoint); }
+    //zmq poll doet send en recv anders kan die vastzitten
+    //zmq::recv_result_t recv(zmq::recv_flags flags) {return socket_.recv(socket_buffer,flags); }
+    //zmq::recv_result_t send(string push_message, zmq::send_flags flags) { return socket_.send(zmq::buffer(push_message),flags);} 
+    json& GetTopic(){return topic_[0];} 
+    void AddEvent(short&& eventtype, _Pollevent_cb cb_);
+    void Connect(string&& endpoint) { socket_.connect(endpoint); }
 
-    Socket_t(json topic, zmq::socket_type type, zmq::context_t& context): topic_{topic}, 
-                                                                          socket_{context, type}, 
-                                                                          socktype_{type}{}
+    Socket_t(json topic, zmq::socket_type type, zmq::context_t& context,CategorySocket& session): topic_{topic},
+                                                                          session_{session},
+                                                                          socket_{context, type}, //--> keep in mind
+                                                                          socktype_{type}{CanSend =false;} //idk how to fix this :(
     ~Socket_t(){}
 private:
+    bool CanSend;
     zmq::socket_t socket_;
     zmq::socket_type socktype_;
+    zmq::message_t socket_buffer;
     json topic_;
+    CategorySocket& session_;
 };
 
 struct CategoryTopic{
@@ -58,17 +64,18 @@ private:
 
 struct EventItems : zmq::pollitem_t {
 
-    EventItems(int index, short eventtype, _Pollevent_cb cb_); // : index_{index}, cb_{cb_}; <- cpp
+    EventItems(int index, short eventtype, _Pollevent_cb cb_, CategorySocket& callback_socket); // : index_{index}, cb_{cb_}; <- cpp
     ~EventItems();
 private:
    int index_;
    _Pollevent_cb cb_;
    short eventtype;
+   CategorySocket& callback_socket; //where does data from callback go
 };
 
 struct CategoryEvents{
     void OnPollEvents();
-    void OnPollAddEvent(_Pollevent_cb cb_, short eventtype);
+    void OnPollAddEvent(void* socket, _Pollevent_cb cb_, short eventtype, CategorySocket* callback_socket = nullptr);
     void OnPollRemoveEvent();
 
     CategoryEvents(chat_manager& session) : session_{session} {}
@@ -82,6 +89,7 @@ private:
 struct CategorySocket{
     void Onlist(string target=""); //list all sockets and their state active /offline etc.. if target is empty all otherways targeted socket
     shared_ptr<Socket_t> Oncreate(json topic, zmq::socket_type type);
+    void OnAddEvent(short& venttype, _Pollevent_cb cb_);
 
     CategorySocket(chat_manager& session) : session_{session} {}
     ~CategorySocket() {}
@@ -105,10 +113,8 @@ private:
 
 public:
     static chat_manager& instance();
-    Socket_t& Socket( string SockedID, string topic = "dnd_session", zmq::socket_type type = static_cast<zmq::socket_type>(-1));
+    Socket_t& Socket( string SockedID, zmq::socket_type type = static_cast<zmq::socket_type>(-1), string topic = "dnd_session");
     const void list_sockets() {sockets.Onlist();}
-
-
 };
 
 }

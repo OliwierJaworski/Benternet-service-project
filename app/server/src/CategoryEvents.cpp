@@ -2,7 +2,7 @@
 
 using namespace Benternet;
 
-EventItems::EventItems(int index, short eventtype, _Pollevent_cb cb_) : index_{index}, cb_{cb_}, eventtype{eventtype}{
+EventItems::EventItems(int index, short eventtype, _Pollevent_cb cb_, CategorySocket& callback_socket ) : index_{index}, cb_{cb_}, eventtype{eventtype}, callback_socket{callback_socket}{
 
 }
 
@@ -11,17 +11,18 @@ EventItems::~EventItems(){
 }
 
 void 
-CategoryEvents::PollEvents(){
+CategoryEvents::OnPollEvents(){
 
 }
 
 void 
-CategoryEvents::PollAddEvent(_Pollevent_cb cb_, short eventtype){
+CategoryEvents::OnPollAddEvent(void* socket, _Pollevent_cb cb_, short eventtype, CategorySocket* callback_socket){
     Poll_Items_.push_back(EventItems{(Poll_Items_.size()-1), eventtype, cb_});
+    ZMQ_Items_.push_back(zmq::pollitem_t{socket, 0, eventtype, 0});
 }
 
 void 
-CategoryEvents::PollRemoveEvent(){
+CategoryEvents::OnPollRemoveEvent(){
     
 }
 

@@ -4,7 +4,6 @@ using namespace Benternet;
 
 shared_ptr<Socket_t> 
 CategorySocket::Oncreate(json topic, zmq::socket_type type){
-    
     for(auto &&currentSocket : sockets_V){
         if( CategoryTopic::OnGet_Session( currentSocket->GetTopic() ) == topic["session"].get<string>() ){
             return currentSocket;
@@ -18,8 +17,18 @@ CategorySocket::Oncreate(json topic, zmq::socket_type type){
         //later misschien default socket behavior dat de user kan instellen bij aanmaken van instance om dit te vermijden.
     }
 
-    auto tmpV_socket_t = make_shared<Socket_t>(topic, type, context);
+    auto tmpV_socket_t = make_shared<Socket_t>(topic, type, context, *this);
     sockets_V.push_back(tmpV_socket_t);
     return tmpV_socket_t;
+}
+
+void 
+Socket_t::AddEvent(short&& eventtype, _Pollevent_cb cb_){
+    session_.OnAddEvent(eventtype,cb_);
+}
+
+void 
+CategorySocket::OnAddEvent(short& eventtype, _Pollevent_cb cb_){
+
 }
 
