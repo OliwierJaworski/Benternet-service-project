@@ -24,14 +24,16 @@ namespace Benternet{
 class chat_manager;
 struct CategorySocket;
 
-typedef string& (*_Pollevent_cb)(string* message);
+typedef string& (*_Pollevent_cb)(string&& message, void* data); //template type can be used her
 
 struct Socket_t{
     //zmq poll doet send en recv anders kan die vastzitten
-    //zmq::recv_result_t recv(zmq::recv_flags flags) {return socket_.recv(socket_buffer,flags); }
-    //zmq::recv_result_t send(string push_message, zmq::send_flags flags) { return socket_.send(zmq::buffer(push_message),flags);} 
+    zmq::recv_result_t recv(zmq::recv_flags flags) {return socket_.recv(socket_buffer,flags); }
+    zmq::recv_result_t send(string push_message, zmq::send_flags flags) { return socket_.send(zmq::buffer(push_message),flags);} 
     json& GetTopic(){return topic_[0];} 
-    void AddEvent(short&& eventtype, _Pollevent_cb cb_);
+    string ReadBuffer(){ return socket_buffer.to_string(); }
+
+    void AddEvent(short&& eventtype, _Pollevent_cb cb_, Socket_t* callback_socket = nullptr); //nullptr als er enkel dataverwerking moet gebeuren
     void Connect(string&& endpoint) { socket_.connect(endpoint); }
 
     Socket_t(json topic, zmq::socket_type type, zmq::context_t& context,CategorySocket& session): topic_{topic},
@@ -62,25 +64,31 @@ private:
     inline static const json topic_template{{"topic", "dnd_session"}, {"session", "start?"}, {"message",""}, {"delim", ">"}};
 };
 
-struct EventItems : zmq::pollitem_t {
+struct EventItems {
 
-    EventItems(int index, short eventtype, _Pollevent_cb cb_, CategorySocket& callback_socket); // : index_{index}, cb_{cb_}; <- cpp
-    ~EventItems();
-private:
    int index_;
    _Pollevent_cb cb_;
    short eventtype;
-   CategorySocket& callback_socket; //where does data from callback go
+   Socket_t* callback_socket; //where does data from callback go
+   Socket_t* current_socket;
+
+    EventItems(int index, short eventtype, _Pollevent_cb cb_, Socket_t* callback_socket, Socket_t* current_socket); // : index_{index}, cb_{cb_}; <- cpp
+    ~EventItems();
+private:
+   
 };
 
 struct CategoryEvents{
     void OnPollEvents();
-    void OnPollAddEvent(void* socket, _Pollevent_cb cb_, short eventtype, CategorySocket* callback_socket = nullptr);
+    void OnPollAddEvent(zmq::pollitem_t&& zmq_item, EventItems& event_item);
     void OnPollRemoveEvent();
+    size_t Getindex(){ return ZMQ_Items_.size() -1; }
 
+    
     CategoryEvents(chat_manager& session) : session_{session} {}
     ~CategoryEvents(){}
 private:
+
     chat_manager& session_;
     std::vector<zmq::pollitem_t > ZMQ_Items_;
     std::vector<EventItems>Poll_Items_;
@@ -89,7 +97,8 @@ private:
 struct CategorySocket{
     void Onlist(string target=""); //list all sockets and their state active /offline etc.. if target is empty all otherways targeted socket
     shared_ptr<Socket_t> Oncreate(json topic, zmq::socket_type type);
-    void OnAddEvent(short& venttype, _Pollevent_cb cb_);
+    void OnAddEvent(short& venttype, _Pollevent_cb cb_, CategorySocket* callback_socket);
+    chat_manager& get_session(){ return session_;}
 
     CategorySocket(chat_manager& session) : session_{session} {}
     ~CategorySocket() {}
@@ -101,6 +110,8 @@ private:
 
 class chat_manager{ 
 private:
+    friend Socket_t;
+
     CategorySocket      sockets {*this}; 
     CategoryTopic       topics  {*this};
     CategoryEvents      events  {*this};

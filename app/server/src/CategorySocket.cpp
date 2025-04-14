@@ -23,12 +23,13 @@ CategorySocket::Oncreate(json topic, zmq::socket_type type){
 }
 
 void 
-Socket_t::AddEvent(short&& eventtype, _Pollevent_cb cb_){
-    session_.OnAddEvent(eventtype,cb_);
+Socket_t::AddEvent(short&& eventtype, _Pollevent_cb cb_, Socket_t* callback_socket){
+    if(cb_ == nullptr){
+        cerr<< "No callback provided for event for socket " << GetTopic()["session"].get<string>() << ", exiting."<< endl;
+        exit(1);
+    }
+    EventItems eventItem(session_.get_session().events.Getindex(), eventtype, cb_, callback_socket, this);
+    session_.get_session().events.OnPollAddEvent(zmq::pollitem_t{.socket = socket_.handle(), .fd = 0, .events= eventtype, .revents=0}, eventItem);
 }
 
-void 
-CategorySocket::OnAddEvent(short& eventtype, _Pollevent_cb cb_){
-
-}
 
