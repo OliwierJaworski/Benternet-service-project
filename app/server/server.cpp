@@ -5,7 +5,7 @@
 
 #include <zmq.hpp>
 #include <openai.hpp>
-#include <dnd_session.h>
+#include <chat_manager.h>
 
 
 using namespace Benternet;
