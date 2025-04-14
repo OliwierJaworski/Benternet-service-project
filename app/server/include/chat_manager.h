@@ -43,7 +43,8 @@ struct Socket_t{
                                                                           socktype_{type}{CanSend =false;} //idk how to fix this :(
     ~Socket_t(){}
 private:
-    
+    friend CategorySocket;
+
     zmq::socket_t socket_;
     zmq::socket_type socktype_;
     zmq::message_t socket_buffer;
@@ -57,7 +58,7 @@ struct CategoryTopic{
     static string OnGet_Message(json& object) { return object["message"].get<string>(); }
     static string OnGet_Delim(json& object)   { return object["delim"].get<string>(); }
     static json OnGet_Template()      { return topic_template; }
-
+    static string to_string( json topic_);
     CategoryTopic(chat_manager& session) : session_{session}  {}
     ~CategoryTopic(){}
 private:
@@ -127,7 +128,7 @@ public:
     static chat_manager& instance();
     Socket_t& Socket( string SockedID, zmq::socket_type type = static_cast<zmq::socket_type>(-1), string topic = "dnd_session");
     const void list_sockets() {sockets.Onlist();}
-    void PollEvents(){events.OnPollEvents();};
+    void PollEvents(){ cout << "entering dangetzone " <<endl; events.OnPollEvents();};
 };
 
 }

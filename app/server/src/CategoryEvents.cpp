@@ -12,10 +12,15 @@ EventItems::~EventItems(){
 
 void 
 CategoryEvents::OnPollEvents(){
-    cout << "polling from event poolsize:" << ZMQ_Items_.size();
+    cout << "polling from event poolsize:" << ZMQ_Items_.size() << endl;
+    for(auto& item : Poll_Items_){
+        cout << "topic: " << item.current_socket->GetTopic().dump() << endl; 
+    }
     try{
         if(zmq::poll(ZMQ_Items_, std::chrono::milliseconds(-1)) == -1){
-
+            std::exception_ptr p = std::current_exception();
+            std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
+            exit(1);
         }
     }catch(...)
     {

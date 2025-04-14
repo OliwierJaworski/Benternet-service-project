@@ -19,6 +19,22 @@ CategorySocket::Oncreate(json topic, zmq::socket_type type){
 
     auto tmpV_socket_t = make_shared<Socket_t>(topic, type, context, *this);
     sockets_V.push_back(tmpV_socket_t);
+    string tmp = CategoryTopic::to_string(tmpV_socket_t->GetTopic());
+    cout << "for setsockopt :"<< tmp << endl;
+
+    switch(type){
+        case zmq::socket_type::sub :
+        tmpV_socket_t->socket_.setsockopt(ZMQ_SUBSCRIBE, tmp.c_str(), tmp.size());
+            break;
+        case zmq::socket_type::pull:
+            break;
+        case zmq::socket_type::push :
+            break;
+        default:
+            std::cerr << "no type case for current type" << std::endl;
+            exit(1);
+    };
+
     return tmpV_socket_t;
 }
 
