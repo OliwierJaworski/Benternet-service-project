@@ -52,21 +52,24 @@ CategoryEvents::ExecuteEvent(EventItems& item, short eventtype){
 
         case POLL_OUT:
             if(item.current_socket->cansend){
-                item.callback_socket->send( item.cb_(item.callback_socket->ReadBuffer(), item.current_socket->GetDataForCB() ), zmq::send_flags::none);
+                item.current_socket->send( item.cb_(item.current_socket->ReadBuffer(), item.current_socket->GetDataForCB(), nullptr), zmq::send_flags::none);
             }
-            item.callback_socket->cansend = false;
+            item.current_socket->cansend = false;
             return;
         break;
 
         case POLL_IN:
             item.current_socket->recv(zmq::recv_flags::none);
-            string tmp = item.cb_( item.current_socket->ReadBuffer(), item.current_socket->GetDataForCB() );
             if(item.callback_socket){
+                string tmp = item.cb_( item.current_socket->ReadBuffer(), item.current_socket->GetDataForCB(), &item.callback_socket->cansend  );
                 item.callback_socket->Set_Buffer(tmp);
+            }else{
+                string tmp = item.cb_( item.current_socket->ReadBuffer(), item.current_socket->GetDataForCB(), nullptr );
             }
             return;
         break;
     }
+
     std::exception_ptr p = std::current_exception();
     std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
     exit(1);

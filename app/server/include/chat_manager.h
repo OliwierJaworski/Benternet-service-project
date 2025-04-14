@@ -24,7 +24,7 @@ namespace Benternet{
 class chat_manager;
 struct CategorySocket;
 
-typedef string (*_Pollevent_cb)(string&& message, void* data); //user can provide his own data
+typedef string (*_Pollevent_cb)(string&& message, void* data, bool* cb_socket); //user can provide his own data
 
 struct Socket_t{
     //zmq poll doet send en recv anders kan die vastzitten idk hoe dat ik dit ga abstracte :/
@@ -40,7 +40,7 @@ struct Socket_t{
     json& GetTopic(){return topic_[0];} 
     string ReadBuffer(){ return socket_buffer.to_string(); } //onefficient 
 
-    int cansend=0;//voor even nadien get/set funcs
+    bool cansend=0;//voor even nadien get/set funcs
 
     Socket_t* instance(){return this;}
     Socket_t(json topic, zmq::socket_type type, zmq::context_t& context,CategorySocket& session): topic_{topic},
