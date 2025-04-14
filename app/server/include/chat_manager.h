@@ -24,19 +24,23 @@ namespace Benternet{
 class chat_manager;
 struct CategorySocket;
 
-typedef string (*_Pollevent_cb)(string&& message, bool* cbsocket_cansend);
+typedef string (*_Pollevent_cb)(string&& message, void* data); //user can provide his own data
 
 struct Socket_t{
     //zmq poll doet send en recv anders kan die vastzitten idk hoe dat ik dit ga abstracte :/
-    void Set_Buffer(string& message) { socket_buffer = zmq::message_t{message.c_str(),message.size()} ;}
+    void Set_Buffer(string message) { socket_buffer = zmq::message_t{message.c_str(),message.size()} ;}
     void AddEvent(short&& eventtype, _Pollevent_cb cb_, std::optional<std::reference_wrapper<Socket_t>> callback_socket = std::nullopt);
     void Connect(string&& endpoint) { socket_.connect(endpoint); }
+    void SetDataForCB(void* data){ UserData = data;}
+    void* GetDataForCB(){return UserData;};
 
     zmq::recv_result_t recv(zmq::recv_flags flags) {return socket_.recv(socket_buffer,flags); }
     zmq::recv_result_t send(string push_message, zmq::send_flags flags) { return socket_.send(zmq::buffer(push_message),flags);} 
 
     json& GetTopic(){return topic_[0];} 
     string ReadBuffer(){ return socket_buffer.to_string(); } //onefficient 
+
+    int cansend=0;//voor even nadien get/set funcs
 
     Socket_t* instance(){return this;}
     Socket_t(json topic, zmq::socket_type type, zmq::context_t& context,CategorySocket& session): topic_{topic},
@@ -46,7 +50,7 @@ struct Socket_t{
     ~Socket_t(){}
 private:
     friend CategorySocket;
-
+    void* UserData;
     zmq::socket_t socket_;
     zmq::socket_type socktype_;
     zmq::message_t socket_buffer;
@@ -128,6 +132,9 @@ private:
     ~chat_manager();
 
 public:
+
+    void executeEvents(){events.LoopEvents();}
+
     static chat_manager& instance();
     Socket_t& Socket( string SockedID, zmq::socket_type type = static_cast<zmq::socket_type>(-1), string topic = "dnd_session");
     const void list_sockets() {sockets.Onlist();}

@@ -48,29 +48,28 @@ CategoryEvents::LoopEvents(){
 void
 CategoryEvents::ExecuteEvent(EventItems& item, short eventtype){
    
-    string tmp;
-
     switch(eventtype){
+
+        case POLL_OUT:
+            if(item.current_socket->cansend){
+                item.callback_socket->send( item.cb_(item.callback_socket->ReadBuffer(), item.current_socket->GetDataForCB() ), zmq::send_flags::none);
+            }
+            item.callback_socket->cansend = false;
+            return;
+        break;
 
         case POLL_IN:
             item.current_socket->recv(zmq::recv_flags::none);
-            tmp = item.cb_(item.current_socket->ReadBuffer(),nullptr);
-            item.callback_socket->Set_Buffer(tmp); //dit is wss fout
-        break;
-
-        case POLL_OUT:
-            if(item.callback_socket != nullptr && item.callback_socket->CanSend){ //check if callback socket is defined and sending is enabled
-                item.callback_socket->send( item.cb_(item.callback_socket->ReadBuffer(),nullptr), zmq::send_flags::none);
-                item.callback_socket->CanSend = false;
+            string tmp = item.cb_( item.current_socket->ReadBuffer(), item.current_socket->GetDataForCB() );
+            if(item.callback_socket){
+                item.callback_socket->Set_Buffer(tmp);
             }
-        break;
-
-        default:
-            std::exception_ptr p = std::current_exception();
-            std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
-            exit(1);
+            return;
         break;
     }
+    std::exception_ptr p = std::current_exception();
+    std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
+    exit(1);
 }
 
 void 
