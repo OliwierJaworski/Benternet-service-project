@@ -24,23 +24,25 @@ namespace Benternet{
 class chat_manager;
 struct CategorySocket;
 
-typedef string (*_Pollevent_cb)(string&& message, bool* cbsocket_cansend); //template type can be used her
+typedef string (*_Pollevent_cb)(string&& message, bool* cbsocket_cansend);
 
 struct Socket_t{
-    //zmq poll doet send en recv anders kan die vastzitten
-    zmq::recv_result_t recv(zmq::recv_flags flags) {return socket_.recv(socket_buffer,flags); }
-    zmq::recv_result_t send(string push_message, zmq::send_flags flags) { return socket_.send(zmq::buffer(push_message),flags);} 
-    json& GetTopic(){return topic_[0];} 
-    string ReadBuffer(){ return socket_buffer.to_string(); } //onefficient 
-    void Set_Buffer(string& message){ socket_buffer = zmq::message_t{message.c_str(),message.size()} ;}
-    void AddEvent(short&& eventtype, _Pollevent_cb cb_, Socket_t* callback_socket = nullptr); //nullptr als er enkel dataverwerking moet gebeuren
+    //zmq poll doet send en recv anders kan die vastzitten idk hoe dat ik dit ga abstracte :/
+    void Set_Buffer(string& message) { socket_buffer = zmq::message_t{message.c_str(),message.size()} ;}
+    void AddEvent(short&& eventtype, _Pollevent_cb cb_, std::optional<std::reference_wrapper<Socket_t>> callback_socket = std::nullopt);
     void Connect(string&& endpoint) { socket_.connect(endpoint); }
 
-    bool CanSend;
+    zmq::recv_result_t recv(zmq::recv_flags flags) {return socket_.recv(socket_buffer,flags); }
+    zmq::recv_result_t send(string push_message, zmq::send_flags flags) { return socket_.send(zmq::buffer(push_message),flags);} 
+
+    json& GetTopic(){return topic_[0];} 
+    string ReadBuffer(){ return socket_buffer.to_string(); } //onefficient 
+
+    Socket_t* instance(){return this;}
     Socket_t(json topic, zmq::socket_type type, zmq::context_t& context,CategorySocket& session): topic_{topic},
                                                                           session_{session},
                                                                           socket_{context, type}, //--> keep in mind
-                                                                          socktype_{type}{CanSend =false;} //idk how to fix this :(
+                                                                          socktype_{type}{} //idk how to fix this :(
     ~Socket_t(){}
 private:
     friend CategorySocket;
@@ -71,8 +73,8 @@ struct EventItems {
    int index_;
    _Pollevent_cb cb_;
    short eventtype;
-   Socket_t* callback_socket; //where does data from callback go
    Socket_t* current_socket;
+   Socket_t* callback_socket; //corresponding send for recv socket
 
     EventItems(int index, short eventtype, _Pollevent_cb cb_, Socket_t* callback_socket, Socket_t* current_socket); // : index_{index}, cb_{cb_}; <- cpp
     ~EventItems();
@@ -81,11 +83,12 @@ private:
 };
 
 struct CategoryEvents{
-    void OnPollEvents();
+    void LogEvents();
+    void LoopEvents();
+    void ExecuteEvent(EventItems& item, short eventtype);
     void OnPollAddEvent(zmq::pollitem_t&& zmq_item, EventItems& event_item);
     void OnPollRemoveEvent();
     size_t Getindex(){ return ZMQ_Items_.size() -1; }
-
     
     CategoryEvents(chat_manager& session) : session_{session} {}
     ~CategoryEvents(){}
@@ -128,7 +131,7 @@ public:
     static chat_manager& instance();
     Socket_t& Socket( string SockedID, zmq::socket_type type = static_cast<zmq::socket_type>(-1), string topic = "dnd_session");
     const void list_sockets() {sockets.Onlist();}
-    void PollEvents(){ cout << "entering dangetzone " <<endl; events.OnPollEvents();};
+    void PollEvents(){events.LogEvents();}; //needs also to loop through all the events!
 };
 
 }

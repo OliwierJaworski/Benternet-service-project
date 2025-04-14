@@ -11,11 +11,7 @@ EventItems::~EventItems(){
 }
 
 void 
-CategoryEvents::OnPollEvents(){
-    cout << "polling from event poolsize:" << ZMQ_Items_.size() << endl;
-    for(auto& item : Poll_Items_){
-        cout << "topic: " << item.current_socket->GetTopic().dump() << endl; 
-    }
+CategoryEvents::LogEvents(){
     try{
         if(zmq::poll(ZMQ_Items_, std::chrono::milliseconds(-1)) == -1){
             std::exception_ptr p = std::current_exception();
@@ -28,39 +24,18 @@ CategoryEvents::OnPollEvents(){
         std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
         exit(1);
     }
-    
-    try{
+}
+
+void
+CategoryEvents::LoopEvents(){
     int index =0;
-    string tmp;
+
+    try{
     cout << "polling items: "<< ZMQ_Items_.size() << endl;
     for(auto& item : ZMQ_Items_){
         if(item.revents & item.events){
-            switch(item.events){
-                case POLL_IN:
-                    Poll_Items_.at(index).current_socket->recv(zmq::recv_flags::none);
-                    tmp = Poll_Items_.at(index).cb_( Poll_Items_.at(index).current_socket->ReadBuffer(),nullptr);
-                    Poll_Items_.at(index).callback_socket->Set_Buffer(tmp);
-                    break;
-
-                case POLL_OUT:
-                    /*
-                        if(Poll_Items_.at(index).callback_socket != nullptr){ //user wants to send data back after reading
-                            if(Poll_Items_.at(index).callback_socket->CanSend){ //the recv processed all data and wants to send answer
-                                Poll_Items_.at(index).callback_socket->send( Poll_Items_.at(index).cb_( Poll_Items_.at(index).callback_socket->ReadBuffer(),nullptr) ,zmq::recv_flags::none);
-                                Poll_Items_.at(index).callback_socket->CanSend = false;
-                            }
-                        }
-                    
-                    */
-                    break;
-                default:
-                    std::exception_ptr p = std::current_exception();
-                    std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
-                    exit(1);
-                    break;
-            }
+            ExecuteEvent(Poll_Items_.at(index),item.events);
         }
-        item.revents=0;
         index++;
     }
     }catch(...)
@@ -68,6 +43,33 @@ CategoryEvents::OnPollEvents(){
         std::exception_ptr p = std::current_exception();
         std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
         exit(1);
+    }
+}
+void
+CategoryEvents::ExecuteEvent(EventItems& item, short eventtype){
+   
+    string tmp;
+
+    switch(eventtype){
+
+        case POLL_IN:
+            item.current_socket->recv(zmq::recv_flags::none);
+            tmp = item.cb_(item.current_socket->ReadBuffer(),nullptr);
+            item.callback_socket->Set_Buffer(tmp); //dit is wss fout
+        break;
+
+        case POLL_OUT:
+            if(item.callback_socket != nullptr && item.callback_socket->CanSend){ //check if callback socket is defined and sending is enabled
+                item.callback_socket->send( item.cb_(item.callback_socket->ReadBuffer(),nullptr), zmq::send_flags::none);
+                item.callback_socket->CanSend = false;
+            }
+        break;
+
+        default:
+            std::exception_ptr p = std::current_exception();
+            std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
+            exit(1);
+        break;
     }
 }
 

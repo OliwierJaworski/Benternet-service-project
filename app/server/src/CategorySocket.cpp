@@ -11,7 +11,6 @@ CategorySocket::Oncreate(json topic, zmq::socket_type type){
     }
 
     if(static_cast<int>(type) == -1){
-        //no socket found and no type provided user error;
         cerr<< "Could not find socket called: " << topic["session"].get<string>() << " and no type provided, exiting."<< endl;
         exit(1);
         //later misschien default socket behavior dat de user kan instellen bij aanmaken van instance om dit te vermijden.
@@ -24,7 +23,7 @@ CategorySocket::Oncreate(json topic, zmq::socket_type type){
 
     switch(type){
         case zmq::socket_type::sub :
-        tmpV_socket_t->socket_.setsockopt(ZMQ_SUBSCRIBE, tmp.c_str(), tmp.size());
+            tmpV_socket_t->socket_.set(zmq::sockopt::subscribe, tmp);
             break;
         case zmq::socket_type::pull:
             break;
@@ -39,13 +38,18 @@ CategorySocket::Oncreate(json topic, zmq::socket_type type){
 }
 
 void 
-Socket_t::AddEvent(short&& eventtype, _Pollevent_cb cb_, Socket_t* callback_socket){
+Socket_t::AddEvent(short&& eventtype, _Pollevent_cb cb_, std::optional<std::reference_wrapper<Socket_t>> callback_socket){
     if(cb_ == nullptr){
         cerr<< "No callback provided for event for socket " << GetTopic()["session"].get<string>() << ", exiting."<< endl;
         exit(1);
     }
-    EventItems eventItem(session_.get_session().events.Getindex(), eventtype, cb_, callback_socket, this);
-    session_.get_session().events.OnPollAddEvent(zmq::pollitem_t{.socket = socket_.handle(), .fd = 0, .events= eventtype, .revents=0}, eventItem);
+    if (callback_socket.has_value()) {
+        EventItems eventItem(session_.get_session().events.Getindex(), eventtype, cb_, callback_socket->get().instance(), this);
+        session_.get_session().events.OnPollAddEvent(zmq::pollitem_t{.socket = socket_.handle(), .fd = 0, .events= eventtype, .revents=0}, eventItem);
+    } else {
+        EventItems eventItem(session_.get_session().events.Getindex(), eventtype, cb_, nullptr, this);
+        session_.get_session().events.OnPollAddEvent(zmq::pollitem_t{.socket = socket_.handle(), .fd = 0, .events= eventtype, .revents=0}, eventItem);
+    }    
 }
 
 
