@@ -24,25 +24,26 @@ namespace Benternet{
 class chat_manager;
 struct CategorySocket;
 
-typedef string& (*_Pollevent_cb)(string&& message, void* data); //template type can be used her
+typedef string (*_Pollevent_cb)(string&& message, bool* cbsocket_cansend); //template type can be used her
 
 struct Socket_t{
     //zmq poll doet send en recv anders kan die vastzitten
     zmq::recv_result_t recv(zmq::recv_flags flags) {return socket_.recv(socket_buffer,flags); }
     zmq::recv_result_t send(string push_message, zmq::send_flags flags) { return socket_.send(zmq::buffer(push_message),flags);} 
     json& GetTopic(){return topic_[0];} 
-    string ReadBuffer(){ return socket_buffer.to_string(); }
-
+    string ReadBuffer(){ return socket_buffer.to_string(); } //onefficient 
+    void Set_Buffer(string& message){ socket_buffer = zmq::message_t{message.c_str(),message.size()} ;}
     void AddEvent(short&& eventtype, _Pollevent_cb cb_, Socket_t* callback_socket = nullptr); //nullptr als er enkel dataverwerking moet gebeuren
     void Connect(string&& endpoint) { socket_.connect(endpoint); }
 
+    bool CanSend;
     Socket_t(json topic, zmq::socket_type type, zmq::context_t& context,CategorySocket& session): topic_{topic},
                                                                           session_{session},
                                                                           socket_{context, type}, //--> keep in mind
                                                                           socktype_{type}{CanSend =false;} //idk how to fix this :(
     ~Socket_t(){}
 private:
-    bool CanSend;
+    
     zmq::socket_t socket_;
     zmq::socket_type socktype_;
     zmq::message_t socket_buffer;
@@ -126,6 +127,7 @@ public:
     static chat_manager& instance();
     Socket_t& Socket( string SockedID, zmq::socket_type type = static_cast<zmq::socket_type>(-1), string topic = "dnd_session");
     const void list_sockets() {sockets.Onlist();}
+    void PollEvents(){events.OnPollEvents();};
 };
 
 }
