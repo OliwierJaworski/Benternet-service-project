@@ -61,7 +61,7 @@ CategoryEvents::ExecuteEvent(EventItems& item, short eventtype){
         case POLL_IN:
             item.current_socket->recv(zmq::recv_flags::none);
             if(item.callback_socket){
-                string tmp = item.cb_( item.current_socket->ReadBuffer(), item.current_socket->GetDataForCB(), &item.callback_socket->cansend  );
+                string tmp = item.cb_( item.current_socket->ReadBuffer() , item.current_socket->GetDataForCB(), &item.callback_socket->cansend  );
                 item.callback_socket->Set_Buffer(tmp);
             }else{
                 string tmp = item.cb_( item.current_socket->ReadBuffer(), item.current_socket->GetDataForCB(), nullptr );

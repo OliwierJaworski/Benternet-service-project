@@ -46,7 +46,7 @@ struct Socket_t{
     Socket_t(json topic, zmq::socket_type type, zmq::context_t& context,CategorySocket& session): topic_{topic},
                                                                           session_{session},
                                                                           socket_{context, type}, //--> keep in mind
-                                                                          socktype_{type}{} //idk how to fix this :(
+                                                                          socktype_{type}{ UserData=nullptr; } //idk how to fix this :(
     ~Socket_t(){}
 private:
     friend CategorySocket;
