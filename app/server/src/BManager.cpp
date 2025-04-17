@@ -5,7 +5,7 @@
  * ------------------------------------------------------------------------- @brief BManager 
 ***/
 
-BManager::BManager(/* args */){
+BManager::BManager(){
 
 }
 
@@ -13,26 +13,24 @@ BManager::~BManager(){
 
 }
 
-/**
- * ------------------------------------------------------------------------- @brief Element_T 
-***/
 
-Element_T::Element_T(/* args */)
-{
-}
 
-Element_T::~Element_T()
-{
-}
+
 
 /**
  * ------------------------------------------------------------------------- @brief Pipeline_T 
 ***/
 
-Pipeline_T::Pipeline_T(/* args */)
-{
+Pipeline_T::Pipeline_T(zmq::context_t& context_): context{context_}{
 }
 
-Pipeline_T::~Pipeline_T()
-{
+Pipeline_T::~Pipeline_T(){
+}
+
+int ElementLink(...){
+
+}
+
+int addLinked((...){
+
 }
