@@ -4,6 +4,8 @@
 #include <zmq.hpp>
 
 class EFactory;
+class Pipeline_T;
+class Element_T;
 
 typedef std::string (*Pollevent_cbF)();
 
@@ -63,18 +65,18 @@ enum class Element_type : int
  * @details - data transfer between objects 
  * @details - data can be probed to reveal whats inside
  */
-struct ICElement{ 
+struct ICElement{
+    friend Pipeline_T;
 public:
-    void SetBuffer(zmq::message_t newvalue){buffer = std::move(newvalue);}
-    zmq::message_t* GetBuffer(){return &buffer;};
+    void SetBuffer(zmq::message_t newvalue){*buffer = std::move(newvalue);}
+    zmq::message_t* GetBuffer(){return buffer.get();};
 
-    ICElement() = default;
+    ICElement(std::shared_ptr<Element_T>& sink_, std::shared_ptr<Element_T>& source_): sink{sink_}, source{source_}{}
     ~ICElement() = default;
 private:
-
-    zmq::message_t buffer;
-    std::shared_ptr<ICElement> sink;
-    std::shared_ptr<ICElement> source;
+    std::shared_ptr<zmq::message_t> buffer;
+    std::shared_ptr<Element_T> sink {nullptr};
+    std::shared_ptr<Element_T> source {nullptr};
 };
 
 /**
@@ -83,6 +85,7 @@ private:
  */
 class Element_T{
     friend EFactory;
+    friend Pipeline_T;
 public:
     virtual void process() = 0; //main activity == send/receive/filter 
 

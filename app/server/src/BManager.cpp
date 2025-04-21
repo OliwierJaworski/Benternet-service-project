@@ -24,11 +24,14 @@ Pipeline_T::Pipeline_T(zmq::context_t& context_): context{context_}{
 Pipeline_T::~Pipeline_T(){
 }
 
-int 
-Pipeline_T::ElementLink(std::initializer_list<std::unique_ptr<Element_T>> ElemList){
-    for(auto& elem : ElemList){
-        linkedElems.push_back(std::move(const_cast<std::unique_ptr<Element_T>&>(elem))); // removes the const-ness from references and pointers
+void
+Pipeline_T::IClink(){
+    for (auto cr = linkedElems.begin(); cr + 1 != linkedElems.end(); ++cr) {
+        auto& current = *cr;
+        auto& next = *(cr + 1);
+
+        current->source = std::make_shared<ICElement>(current,next);
+        next->sink = current->source;
     }
-    return 0;
 }
 

@@ -33,13 +33,14 @@ private:
 class Pipeline_T{
 private:
     zmq::context_t& context;
-    std::vector< std::unique_ptr<Element_T> > Elements;
     std::vector<PollItem_T> items;
-    std::vector<std::unique_ptr<Element_T>> linkedElems;
+    std::vector<std::shared_ptr<Element_T>> linkedElems;
 
+    void IClink(); //connect each Element with the next using ICElements
 public:
-    int ElementLink(std::initializer_list<std::unique_ptr<Element_T>> ElemList);
-
+    template<typename... Ptrs>
+    int ElementLink(std::unique_ptr<Element_T>&& first, Ptrs&&... rest);//loop over atleast 1 item so user does not call empty function
+    
     Pipeline_T(zmq::context_t& context_);
     ~Pipeline_T();
 };
@@ -64,7 +65,11 @@ public:
 };
 
 
-
-
-
-
+template<typename... Ptrs>
+int 
+Pipeline_T::ElementLink(std::unique_ptr<Element_T>&& first, Ptrs&&... rest){
+    linkedElems.push_back(std::move(first));
+    (linkedElems.push_back(std::move(rest)), ...); 
+    IClink();
+    return 0;
+}
