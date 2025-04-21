@@ -5,10 +5,13 @@
 
 class EFactory;
 
+typedef std::string (*Pollevent_cbF)();
+
 enum ElemOPT{
     ENDPOINT,
     SOCKCREATE, 
     SOCKOPT,
+    SOCK_CB,
     NOOPT
 };
 
@@ -82,17 +85,18 @@ class Element_T{
     friend EFactory;
 public:
     virtual void process() = 0; //main activity == send/receive/filter 
-    
-protected:
-    void* (*cb_)(){nullptr};
 
+    virtual ~Element_T() = default;
+protected:
+    Pollevent_cbF cb_{nullptr};
+    std::vector<std::string> caps;
     zmq::context_t& context;
     std::shared_ptr<ICElement> sink {nullptr};
     std::shared_ptr<ICElement> source {nullptr};
     std::unique_ptr<zmq::socket_t> socket {nullptr};
 
     Element_T(zmq::context_t& ctx): context{ctx}{};
-    virtual ~Element_T() = default;
+    
 private:
 
 };
@@ -137,3 +141,58 @@ public:
     
     void process() override;
 };
+
+//cheat to fix template nonsense
+template<typename argT>
+RSLT 
+EFactory::opt(ElemOPT opt, argT arg, std::optional<const void*> optval_, std::optional<size_t> size){
+    switch(opt){
+        case ENDPOINT:
+            if constexpr (std::is_convertible_v<argT, std::string>) {
+                if (element) {
+                    element->socket->connect(arg);
+                    return RSLT::OK;
+                } else {
+                    std::cerr << "Element not created before ENDPOINT set.\n";
+                    return RSLT::NOK;
+                }
+            } else {
+                std::cerr << "Invalid argument type for ENDPOINT (should be string-like).\n";
+                return RSLT::NOK;
+            }
+
+        case SOCKCREATE:
+            if constexpr (std::is_same_v<argT, Element_type>) {
+                CreateElement(arg);
+                return RSLT::OK;
+            } else {
+                std::cerr << "Invalid argument type for SOCKCREATE (should be Element_type).\n";
+                return RSLT::NOK;
+            }
+
+        case SOCKOPT:
+            if constexpr (std::is_same_v<argT, int>) {
+                if (element && optval_.has_value() && size.has_value()) {
+                    element->socket->setsockopt(arg, optval_.value(), size.value());
+                    return RSLT::OK;
+                } else {
+                    std::cerr << "Missing socket or optional parameters for SOCKOPT.\n";
+                    return RSLT::NOK;
+                }
+            } else {
+                std::cerr << "Invalid argument type for SOCKOPT (should be int).\n";
+                return RSLT::NOK;
+            }
+        case SOCK_CB:
+            if constexpr (std::is_same_v<argT, Pollevent_cbF>) {
+               element->cb_ = arg;
+               return RSLT::OK;
+            } else {
+                std::cerr << "Invalid argument type for SOCK_CB (should be Pollevent_cbF).\n";
+                return RSLT::NOK;
+            }
+        default:
+            std::cerr << "Unsupported ElemOPT value.\n";
+            return RSLT::NOK;
+    }
+}

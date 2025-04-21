@@ -7,16 +7,20 @@
 #include <openai.hpp>
 #include <BManager.h>
 
+std::string cb_func() {
+    return "hello from callback!";
+}
+
 int main() {
     std::shared_ptr<Pipeline_T> pipelineA;
     EFactory builder{*BManager::context()};
 
     std::string topic ="topictest";
-
-    builder.opt(ElemOPT::ENDPOINT, "idk.be");
     builder.opt(ElemOPT::SOCKCREATE, Element_type::sub);
+    builder.opt(ElemOPT::ENDPOINT, "tcp://localhost:5555");
     builder.opt(ElemOPT::SOCKOPT, ZMQ_SUBSCRIBE, topic.c_str(), topic.size());
+    builder.opt(ElemOPT::SOCK_CB,cb_func);
     std::unique_ptr <Element_T> socket_sub = builder.build();
-    
+
     return 0;
 }

@@ -7,56 +7,6 @@ EFactory::build(){
     return std::move(tmp);
 }
 
-template<typename argT>
-RSLT 
-EFactory::opt(ElemOPT opt, argT  arg, std::optional<const void*> optval_, std::optional<size_t> size){
-    switch(opt){
-        case ENDPOINT:
-            if(std::is_same<argT, std::string>::value){
-                if(element.get() != nullptr){
-                    element->socket->connect(arg);
-                }else{
-                    std::cerr <<"wrong type provided for argument";
-                    exit(1);
-                }
-            }else{
-                std::cerr <<"wrong type provided for argument";
-                exit(1);
-            }
-            break;
-        case SOCKCREATE:
-            if(std::is_same<argT, Element_type>::value){
-                CreateElement(arg);
-            }else{
-                std::cerr <<"wrong type provided for argument";
-                exit(1);
-            }
-            break;
-        case SOCKOPT:
-            if(std::is_same<argT, int>::value){
-                if(element.get() != nullptr){
-                    if (optval_.has_value() && size.has_value()) {
-                        element->socket->setsockopt(arg, optval_.value(), size.value());
-                    }else{
-                        std::cerr <<"wrong type provided for argument";
-                        exit(1);
-                    }
-                }else{
-                    std::cerr <<"wrong type provided for argument";
-                    exit(1);
-                }
-            }else{
-                std::cerr <<"wrong type provided for argument";
-                exit(1);
-            }
-            break;
-        default:
-            return -1;
-            break;
-    }
-    return 0;
-}
-
 void EFactory::CreateElement(Element_type type) {
     switch(type) {
         case Element_type::sub:

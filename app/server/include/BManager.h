@@ -8,7 +8,6 @@
 
 class BManager;
 
-typedef std::string (*Pollevent_cbF)(std::string&& message, void* data, bool* cb_socket);
 
 /**
  * @class templated PollItem_T
@@ -36,11 +35,10 @@ private:
     zmq::context_t& context;
     std::vector< std::unique_ptr<Element_T> > Elements;
     std::vector<PollItem_T> items;
+    std::vector<std::unique_ptr<Element_T>> linkedElems;
 
 public:
-
-    int ElementLink(va_arg, ...);
-    int addLinked(va_arg ...);
+    int ElementLink(std::initializer_list<std::unique_ptr<Element_T>> ElemList);
 
     Pipeline_T(zmq::context_t& context_);
     ~Pipeline_T();
