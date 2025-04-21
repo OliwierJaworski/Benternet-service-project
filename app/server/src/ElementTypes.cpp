@@ -1,20 +1,105 @@
 #include <ElementTypes.h>
 
+std::unique_ptr<Element_T> 
+EFactory::build(){
+    std::unique_ptr<Element_T> tmp = std::move(element);
+    reset();
+    return std::move(tmp);
+}
 
-/**
- * ------------------------------------------------------------------------- @brief Element_T 
-***/
-
-int 
-Element_T::opt(ElemOPT opt, std::string arg){
+template<typename argT>
+RSLT 
+EFactory::opt(ElemOPT opt, argT  arg, std::optional<const void*> optval_, std::optional<size_t> size){
     switch(opt){
         case ENDPOINT:
+            if(std::is_same<argT, std::string>::value){
+                if(element.get() != nullptr){
+                    element->socket->connect(arg);
+                }else{
+                    std::cerr <<"wrong type provided for argument";
+                    exit(1);
+                }
+            }else{
+                std::cerr <<"wrong type provided for argument";
+                exit(1);
+            }
+            break;
+        case SOCKCREATE:
+            if(std::is_same<argT, Element_type>::value){
+                CreateElement(arg);
+            }else{
+                std::cerr <<"wrong type provided for argument";
+                exit(1);
+            }
             break;
         case SOCKOPT:
+            if(std::is_same<argT, int>::value){
+                if(element.get() != nullptr){
+                    if (optval_.has_value() && size.has_value()) {
+                        element->socket->setsockopt(arg, optval_.value(), size.value());
+                    }else{
+                        std::cerr <<"wrong type provided for argument";
+                        exit(1);
+                    }
+                }else{
+                    std::cerr <<"wrong type provided for argument";
+                    exit(1);
+                }
+            }else{
+                std::cerr <<"wrong type provided for argument";
+                exit(1);
+            }
             break;
         default:
             return -1;
             break;
     }
     return 0;
+}
+
+void EFactory::CreateElement(Element_type type) {
+    switch(type) {
+        case Element_type::sub:
+    
+            element = std::make_unique<Sub_Element>(context); 
+            element->socket = std::make_unique<zmq::socket_t>(context, ZMQ_SUB);
+            break;
+
+        case Element_type::push:
+           
+            element = std::make_unique<Push_Element>(context);
+            element->socket = std::make_unique<zmq::socket_t>(context, ZMQ_PUSH);
+            break;
+
+        case Element_type::qeue:
+            
+            break;
+
+        case Element_type::filter:
+            element = std::make_unique<Filter_Element>(context);
+            break;
+
+        default:
+            std::cerr << "Unknown element type" << std::endl;
+            exit(1);
+            break;
+    }
+}
+
+void
+Sub_Element::process(){
+    (void)socket->recv(*sink->GetBuffer(), zmq::recv_flags::none);
+}
+
+void
+Push_Element::process(){
+    std::string buffer; 
+    (void)socket->send(*source->GetBuffer(),zmq::send_flags::none);
+}
+
+void
+Filter_Element::process(){
+    if(cb_ != nullptr){
+        cb_();
+    }
 }

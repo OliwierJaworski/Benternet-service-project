@@ -56,13 +56,13 @@ public:
 
 class BManager{
 private:
-    zmq::context_t context{1};
-    static std::vector< std::shared_ptr<Pipeline_T> > pipelines;
-
+    static std::vector<std::shared_ptr<Pipeline_T>> pipelines;
+    
     BManager();
     ~BManager();
 public:
     inline static BManager& instance() { static BManager BManagers; return BManagers; }
+    inline static zmq::context_t* context() { static zmq::context_t context{1}; return &context;} 
 };
 
 
