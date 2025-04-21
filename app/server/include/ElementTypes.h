@@ -69,7 +69,7 @@ struct ICElement{
     friend Pipeline_T;
 public:
     void SetBuffer(zmq::message_t newvalue){*buffer = std::move(newvalue);}
-    zmq::message_t* GetBuffer(){return buffer.get();};
+    zmq::message_t& GetBuffer(){return *buffer;};
 
     ICElement(std::shared_ptr<Element_T>& sink_, std::shared_ptr<Element_T>& source_): sink{sink_}, source{source_}{}
     ~ICElement() = default;
@@ -88,9 +88,12 @@ class Element_T{
     friend Pipeline_T;
 public:
     virtual void process() = 0; //main activity == send/receive/filter 
+    void SetBuffer(zmq::message_t newvalue){sink->GetBuffer() = std::move(newvalue);}
+    zmq::message_t& GetBuffer(){return sink->GetBuffer();};
 
     virtual ~Element_T() = default;
 protected:
+    
     Pollevent_cbF cb_{nullptr};
     std::vector<std::string> caps;
     zmq::context_t& context;

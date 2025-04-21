@@ -39,14 +39,14 @@ void EFactory::CreateElement(Element_type type) {
 void
 Sub_Element::process(){
     std::cout << "process of sub element\n";
-    (void)socket->recv(*sink->GetBuffer(), zmq::recv_flags::none);
+    (void)socket->recv(sink->GetBuffer(), zmq::recv_flags::none);
 }
 
 void
 Push_Element::process(){
     std::cout << "process of push element\n";
     std::string buffer; 
-    (void)socket->send(*source->GetBuffer(),zmq::send_flags::none);
+    (void)socket->send(source->GetBuffer(),zmq::send_flags::none);
 }
 
 void

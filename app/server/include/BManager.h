@@ -32,6 +32,7 @@ private:
  */
 class Pipeline_T{
 private:
+    bool status{false}; // offline| not running
     zmq::context_t& context;
     std::vector<PollItem_T> items;
     std::vector<std::shared_ptr<Element_T>> linkedElems;
@@ -40,7 +41,9 @@ private:
 public:
     template<typename... Ptrs>
     int ElementLink(std::unique_ptr<Element_T>&& first, Ptrs&&... rest);//loop over atleast 1 item so user does not call empty function
-    
+    void SetStatus(bool status_){status = status_;}
+    bool GetStatus(){return status;}// eg. running or not 
+
     Pipeline_T(zmq::context_t& context_);
     ~Pipeline_T();
 };
@@ -62,6 +65,13 @@ private:
 public:
     inline static BManager& instance() { static BManager BManagers; return BManagers; }
     inline static zmq::context_t* context() { static zmq::context_t context{1}; return &context;} 
+    
+    //pipeline running | not running
+    inline static void StartSingle(std::shared_ptr<Pipeline_T> ref); 
+    inline static void StartAll();
+    inline static void stopSingle(std::shared_ptr<Pipeline_T> ref);
+    inline static void stopAll();
+
 };
 
 
