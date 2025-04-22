@@ -29,6 +29,7 @@ BManager::Run(){
         bool any_running = false;
 
         for (auto& pipeline : pipelines) {
+            std::cout << "traversed pipeline\n";
             if (pipeline->GetStatus()) {
                 pipeline->pollevents();
                 any_running = true;
@@ -60,14 +61,19 @@ Pipeline_T::Shutdown(){
 
 void
 Pipeline_T::IClink(){
-    for (auto cr = linkedElems.begin(); cr + 1 != linkedElems.end(); ++cr) {
+    if(linkedElems.size() < 2){
+        std::cerr << "must be atleast 2 elements to create a working pipeline!\n";
+        exit(1);
+    }
+    for (auto cr = linkedElems.begin(); cr + 1 != linkedElems.end(); cr++) {
         auto& current = *cr;
         auto& next = *(cr + 1);
 
-        current->source = std::make_shared<ICElement>(current,next);
+        current->source = std::make_shared<ICElement>(current, next, buffer);
         next->sink = current->source;
     }
 }
+
 void 
 Pipeline_T::pollevents(){
     

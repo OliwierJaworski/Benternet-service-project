@@ -35,14 +35,15 @@ int main() {
     
     std::cout << " element linking!\n";
     pipeline->ElementLink(
-        std::move(RecvStart),
+        //std::move(RecvStart),
         std::move(processreply),
         std::move(sendReply)
     );
     std::cout << "finished linking!\n";
     BManager::instance().StartSingle(pipeline);
+    BManager::instance().Run();
     BManager::instance().stopSingle(pipeline);
-    
+    exit(1);
     return 0;
 }
 

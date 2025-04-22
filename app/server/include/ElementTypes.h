@@ -86,10 +86,12 @@ public:
     void SetBuffer(zmq::message_t newvalue){*buffer = std::move(newvalue);}
     zmq::message_t& GetBuffer(){return *buffer;};
 
-    ICElement(std::shared_ptr<Element_T>& sink_, std::shared_ptr<Element_T>& source_): sink{sink_}, source{source_}{}
+    ICElement(std::shared_ptr<Element_T>& sink_, std::shared_ptr<Element_T>& source_, std::shared_ptr<zmq::message_t>& shared_buffer): 
+                                    sink{sink_}, source{source_}, buffer{shared_buffer}{}
+
     ~ICElement() = default;
 private:
-    std::shared_ptr<zmq::message_t> buffer;
+    std::shared_ptr<zmq::message_t> buffer {nullptr};
     std::shared_ptr<Element_T> sink {nullptr};
     std::shared_ptr<Element_T> source {nullptr};
 };
@@ -103,8 +105,6 @@ class Element_T{
     friend Pipeline_T;
 public:
     virtual void process() = 0; //main activity == send/receive/filter 
-    void SetBuffer(zmq::message_t newvalue){sink->GetBuffer() = std::move(newvalue);}
-    zmq::message_t& GetBuffer(){return sink->GetBuffer();};
     std::string ReturnTopic(){return topic;}
 
     virtual ~Element_T() = default;

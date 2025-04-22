@@ -18,6 +18,7 @@ private:
     bool status{false}; // offline| not running
     bool IsContinous{false}; //whether its oneshot or not
     int elem_index{0};
+    std::shared_ptr<zmq::message_t> buffer{nullptr};
     zmq::context_t& context;
     std::vector<std::shared_ptr<Element_T>> linkedElems;
     void IClink(); //connect each Element with the next using ICElements
@@ -34,7 +35,7 @@ public:
     void pollevents();
     void Shutdown();
 
-    Pipeline_T(zmq::context_t& context_): context{context_}{}
+    Pipeline_T(zmq::context_t& context_): context{context_}{buffer = std::make_shared<zmq::message_t>();}
     ~Pipeline_T(){}
 };
 
@@ -57,7 +58,7 @@ public:
     inline static zmq::context_t* context() { static zmq::context_t context{1}; return &context;} 
 
     //pipeline running | not running
-    void StartSingle(std::shared_ptr<Pipeline_T>& ref) {ref->SetStatus(true);}
+    void StartSingle(std::shared_ptr<Pipeline_T>& ref) {ref->SetStatus(true); pipelines.push_back(ref);}
     void StartAll();
     void stopSingle(std::shared_ptr<Pipeline_T>& ref);
     void stopAll();
