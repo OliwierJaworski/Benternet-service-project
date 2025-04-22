@@ -9,6 +9,10 @@
 
 void cb_func(zmq::message_t& forwarded_data) {
     std::cout << "hello from callback!\n";
+    std::string tmp = BMessage::ToAnswer(forwarded_data);
+    tmp += "your code is:";
+    forwarded_data.rebuild(tmp.size());
+    memcpy(forwarded_data.data(), tmp.data(), tmp.size());
 }
 
 int main() {
@@ -30,7 +34,8 @@ int main() {
 
     std::cout << "send creation!\n";
     builder.opt(ElemOPT::SOCKCREATE, Element_type::push);
-    builder.opt(ElemOPT::ENDPOINT, "tcp://localhost:5554");
+    //builder.opt(ElemOPT::ENDPOINT, "tcp://localhost:5554");
+    builder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24041");
     auto sendReply = builder.build();
     
     std::cout << " element linking!\n";

@@ -41,9 +41,22 @@ void EFactory::CreateElement(Element_type type) {
 void
 Sub_Element::process(){
     std::cout << "process of sub element\n";
-    if (socket->recv(sink->GetBuffer(), zmq::recv_flags::none) == -1)
-    {
-        std::cout << zmq_strerror(errno) << std::endl;
+    
+    if(sink != nullptr){
+        if (socket->recv(sink->GetBuffer(), zmq::recv_flags::none) == -1)
+        {
+            std::cout << zmq_strerror(errno) << std::endl;
+        }
+
+    }else if(source != nullptr){
+        if (socket->recv(source->GetBuffer(), zmq::recv_flags::none) == -1)
+        {
+            std::cout << zmq_strerror(errno) << std::endl;
+        }
+
+    }else{
+        std::cout << "somehow no buffer could be found\n";
+        exit(1);
     }
 }
 
@@ -51,7 +64,7 @@ void
 Push_Element::process(){
     std::cout << "process of push element\n";
     std::string buffer; 
-    if (socket->send(source->GetBuffer(),zmq::send_flags::none) == -1)
+    if (socket->send(sink->GetBuffer(),zmq::send_flags::none) == -1)
     {
         std::cout << zmq_strerror(errno) << std::endl;
     }
@@ -61,6 +74,17 @@ void
 Filter_Element::process(){
     std::cout << "process of Filter element\n";
     if(cb_ != nullptr){
-        cb_(sink->GetBuffer()); //in message = topic
+        if(sink != nullptr){
+            std::cout << "sink is not nullptr so taking its buffer\n";
+            cb_(sink->GetBuffer()); //in message = topic
+
+        }else if(source != nullptr){
+            std::cout << "source is not nullptr so taking its buffer\n";
+            cb_(source->GetBuffer()); //in message = topic
+
+        }else{
+            std::cout << "somehow no buffer could be found\n";
+            exit(1);
+        }
     }
 }
