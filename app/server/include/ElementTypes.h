@@ -105,9 +105,11 @@ public:
     virtual void process() = 0; //main activity == send/receive/filter 
     void SetBuffer(zmq::message_t newvalue){sink->GetBuffer() = std::move(newvalue);}
     zmq::message_t& GetBuffer(){return sink->GetBuffer();};
+    std::string ReturnTopic(){return topic;}
 
     virtual ~Element_T() = default;
 protected:
+    std::string topic{""};
     std::unique_ptr<PollItem_T> eventhandle{nullptr};
     Pollevent_cbF cb_{nullptr};
     std::vector<std::string> caps;

@@ -21,7 +21,7 @@ private:
     zmq::context_t& context;
     std::vector<std::shared_ptr<Element_T>> linkedElems;
     void IClink(); //connect each Element with the next using ICElements
-    void pollevents();
+    
 public:
 
     template<typename... Ptrs>
@@ -31,8 +31,11 @@ public:
     void SetIsContinous(bool status_){IsContinous = status_;}
     bool GetIsContinous(){return IsContinous;}// eg. running or not 
 
-    Pipeline_T(zmq::context_t& context_);
-    ~Pipeline_T();
+    void pollevents();
+    void Shutdown();
+
+    Pipeline_T(zmq::context_t& context_): context{context_}{}
+    ~Pipeline_T(){}
 };
 
 /**
@@ -45,19 +48,20 @@ public:
 
 class BManager{
 private:
-    static std::vector<std::shared_ptr<Pipeline_T>> pipelines;
+    std::vector<std::shared_ptr<Pipeline_T>> pipelines;
     
-    BManager();
-    ~BManager();
+    BManager(){}
+    ~BManager(){}
 public:
     inline static BManager& instance() { static BManager BManagers; return BManagers; }
     inline static zmq::context_t* context() { static zmq::context_t context{1}; return &context;} 
 
     //pipeline running | not running
-    inline static void StartSingle(std::shared_ptr<Pipeline_T>& ref);
-    inline static void StartAll();
-    inline static void stopSingle(std::shared_ptr<Pipeline_T>& ref);
-    inline static void stopAll();
+    void StartSingle(std::shared_ptr<Pipeline_T>& ref) {ref->SetStatus(true);}
+    void StartAll();
+    void stopSingle(std::shared_ptr<Pipeline_T>& ref);
+    void stopAll();
+    void Run();
 };
 
 

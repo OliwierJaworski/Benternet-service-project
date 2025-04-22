@@ -7,28 +7,42 @@
 #include <openai.hpp>
 #include <BManager.h>
 
-std::string cb_func() {
-    return "hello from callback!";
+void cb_func(zmq::message_t& forwarded_data) {
+    std::cout << "hello from callback!\n";
 }
 
 int main() {
-    std::shared_ptr<Pipeline_T> pipeline;
+    std::shared_ptr<Pipeline_T> pipeline = std::make_shared<Pipeline_T>(*BManager::context());
     EFactory builder{*BManager::context()};
 
-    std::string topic ="topictest";
+    std::string topic ="dnd_session>start?>";
+
+    std::cout << "recv creation!\n";
     builder.opt(ElemOPT::SOCKCREATE, Element_type::sub);
-    builder.opt(ElemOPT::ENDPOINT, "tcp://localhost:5555");
+    builder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24042");
     builder.opt(ElemOPT::SOCKOPT, ZMQ_SUBSCRIBE, topic.c_str(), topic.size());
+    auto RecvStart = builder.build();
+
+    std::cout << "filter creation!\n";
+    builder.opt(ElemOPT::SOCKCREATE, Element_type::filter);
     builder.opt(ElemOPT::SOCK_CB, cb_func);
-    auto socket_sub = builder.build();
-    auto socket_sub1 = builder.build();
-    auto socket_sub2 = builder.build();
+    auto processreply = builder.build();
+
+    std::cout << "send creation!\n";
+    builder.opt(ElemOPT::SOCKCREATE, Element_type::push);
+    builder.opt(ElemOPT::ENDPOINT, "tcp://localhost:5554");
+    auto sendReply = builder.build();
     
+    std::cout << " element linking!\n";
     pipeline->ElementLink(
-        std::move(socket_sub),
-        std::move(socket_sub1),
-        std::move(socket_sub2)
+        std::move(RecvStart),
+        std::move(processreply),
+        std::move(sendReply)
     );
+    std::cout << "finished linking!\n";
+    BManager::instance().StartSingle(pipeline);
+    BManager::instance().stopSingle(pipeline);
+    
     return 0;
 }
 

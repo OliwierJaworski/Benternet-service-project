@@ -61,7 +61,6 @@ void
 Filter_Element::process(){
     std::cout << "process of Filter element\n";
     if(cb_ != nullptr){
-        cb_(sink->GetBuffer());
-
+        cb_(sink->GetBuffer()); //in message = topic
     }
 }
