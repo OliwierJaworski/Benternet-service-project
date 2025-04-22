@@ -41,20 +41,27 @@ void EFactory::CreateElement(Element_type type) {
 void
 Sub_Element::process(){
     std::cout << "process of sub element\n";
-    (void)socket->recv(sink->GetBuffer(), zmq::recv_flags::none);
+    if (socket->recv(sink->GetBuffer(), zmq::recv_flags::none) == -1)
+    {
+        std::cout << zmq_strerror(errno) << std::endl;
+    }
 }
 
 void
 Push_Element::process(){
     std::cout << "process of push element\n";
     std::string buffer; 
-    (void)socket->send(source->GetBuffer(),zmq::send_flags::none);
+    if (socket->send(source->GetBuffer(),zmq::send_flags::none) == -1)
+    {
+        std::cout << zmq_strerror(errno) << std::endl;
+    }
 }
 
 void
 Filter_Element::process(){
     std::cout << "process of Filter element\n";
     if(cb_ != nullptr){
-        cb_();
+        cb_(sink->GetBuffer());
+
     }
 }

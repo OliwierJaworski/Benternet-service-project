@@ -7,7 +7,7 @@ class EFactory;
 class Pipeline_T;
 class Element_T;
 
-typedef std::string (*Pollevent_cbF)();
+typedef void (*Pollevent_cbF)(zmq::message_t& forwarded_data);
 
 enum ElemOPT{
     ENDPOINT,
