@@ -115,3 +115,33 @@ Pipeline_T::pollevents(){
     }
 }
 
+/**
+ * ------------------------------------------------------------------------- @brief BMessage 
+***/
+
+std::string 
+BMessage::ToTopic(zmq::message_t& forwarded_data){
+    std::string result = forwarded_data.to_string();
+    size_t index=0;
+    for(int f=0;f<3; f++){ // topic>session>name>
+        index = result.find(">",index+1);
+    }
+    result= result.substr(0,index+1);
+    std::cout << "topic>session>name> ->" << result << "\n";
+    return result;
+}  
+
+std::string 
+BMessage::ToAnswer(zmq::message_t& forwarded_data){
+    std::string result = forwarded_data.to_string();
+    size_t index=0;
+    for(int f=0;f<3; f++){ // topic>session>name>
+        index = result.find(">",index+1);
+    }
+    result= result.substr(0,index+1);
+    index = result.find("?");
+    result[index] = '!';
+
+    std::cout << "answers to:" << result << "\n";
+    return result;
+}  

@@ -77,7 +77,9 @@ Pipeline_T::ElementLink(std::unique_ptr<Element_T>&& first, Ptrs&&... rest){
 
 class BMessage{
 private:
-public:
     BMessage(){}
     ~BMessage(){}
+public:
+    static std::string ToTopic(zmq::message_t& forwarded_data);
+    static std::string ToAnswer(zmq::message_t& forwarded_data);
 };
