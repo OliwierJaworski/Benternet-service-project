@@ -13,12 +13,14 @@ void EFactory::CreateElement(Element_type type) {
     
             element = std::make_unique<Sub_Element>(context); 
             element->socket = std::make_unique<zmq::socket_t>(context, ZMQ_SUB);
+            element->eventhandle= std::make_unique<PollItem_T>(element->socket->handle(),POLL_IN,*element);
             break;
 
         case Element_type::push:
            
             element = std::make_unique<Push_Element>(context);
             element->socket = std::make_unique<zmq::socket_t>(context, ZMQ_PUSH);
+            element->eventhandle= std::make_unique<PollItem_T>(element->socket->handle(),POLL_OUT,*element);
             break;
 
         case Element_type::qeue:

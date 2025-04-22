@@ -59,6 +59,21 @@ enum class Element_type : int
 #endif
 
 /**
+ * @class templated PollItem_T
+ * @brief structure for event logging and callbacks
+ *
+ * @details - variable type of Uarg user can provide own datatype for specific data manipulation
+ * @example - provide datatype to store image, text or audio data which will be used in the pipeline
+ */
+struct PollItem_T{
+    operator zmq::pollitem_t*() {return &item;}; 
+    PollItem_T(void* socket_, short eventtype_, Element_T& elem) : item{ .socket= socket_, .fd=-1, .events = eventtype_, .revents=0}, element{elem}{}
+private:
+    zmq::pollitem_t item;
+    Element_T& element;
+};
+
+/**
  * @class Interconnect Element
  * @brief Struct for managing interconnection between element-type objects
  *
@@ -93,7 +108,7 @@ public:
 
     virtual ~Element_T() = default;
 protected:
-    
+    std::unique_ptr<PollItem_T> eventhandle{nullptr};
     Pollevent_cbF cb_{nullptr};
     std::vector<std::string> caps;
     zmq::context_t& context;
