@@ -74,3 +74,10 @@ Pipeline_T::ElementLink(std::unique_ptr<Element_T>&& first, Ptrs&&... rest){
     IClink();
     return 0;
 }
+
+class BMessage{
+private:
+public:
+    BMessage(){}
+    ~BMessage(){}
+};

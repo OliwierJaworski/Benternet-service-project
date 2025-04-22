@@ -86,6 +86,5 @@ Filter_Element::process(){
             std::cout << "somehow no buffer could be found\n";
             exit(1);
         }
-       
     }
 }
