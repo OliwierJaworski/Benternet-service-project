@@ -57,7 +57,7 @@ public:
     inline static zmq::context_t* context() { static zmq::context_t context{1}; return &context;} 
 
     //pipeline running | not running
-    void StartSingle(std::shared_ptr<Pipeline_T>& ref) {ref->SetStatus(true);}
+    void StartSingle(std::shared_ptr<Pipeline_T>& ref) {ref->SetStatus(true); pipelines.push_back(ref);}
     void StartAll();
     void stopSingle(std::shared_ptr<Pipeline_T>& ref);
     void stopAll();

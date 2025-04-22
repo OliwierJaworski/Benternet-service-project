@@ -29,6 +29,7 @@ BManager::Run(){
         bool any_running = false;
 
         for (auto& pipeline : pipelines) {
+            std::cout << "traversed pipeline\n";
             if (pipeline->GetStatus()) {
                 pipeline->pollevents();
                 any_running = true;

@@ -41,8 +41,9 @@ int main() {
     );
     std::cout << "finished linking!\n";
     BManager::instance().StartSingle(pipeline);
+    BManager::instance().Run();
     BManager::instance().stopSingle(pipeline);
-    
+    exit(1);
     return 0;
 }
 
