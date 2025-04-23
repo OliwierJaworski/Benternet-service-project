@@ -43,17 +43,17 @@ Sub_Element::process(){
     std::cout << "process of sub element\n";
     
     if(sink != nullptr){
-        if (socket->recv(sink->GetBuffer(), zmq::recv_flags::none) == -1)
+        if (socket->recv(sink->GetICEBuffer()->GetzmqData(), zmq::recv_flags::none) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl;
         }
-
+        sink->GetICEBuffer()->Deserialize();
     }else if(source != nullptr){
-        if (socket->recv(source->GetBuffer(), zmq::recv_flags::none) == -1)
+        if (socket->recv(source->GetICEBuffer()->GetzmqData(), zmq::recv_flags::none) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl;
         }
-
+        source->GetICEBuffer()->Deserialize();
     }else{
         std::cout << "somehow no buffer could be found\n";
         exit(1);
@@ -63,10 +63,24 @@ Sub_Element::process(){
 void
 Push_Element::process(){
     std::cout << "process of push element\n";
+
     std::string buffer; 
-    if (socket->send(sink->GetBuffer(),zmq::send_flags::none) == -1)
-    {
-        std::cout << zmq_strerror(errno) << std::endl;
+
+    if(sink != nullptr){
+        if (socket->send(sink->GetICEBuffer()->GetzmqData(),zmq::send_flags::none) == -1)
+        {
+            std::cout << zmq_strerror(errno) << std::endl;
+        }
+        sink->GetICEBuffer()->Serialize();
+    }else if(source != nullptr){
+        if (socket->send(source->GetICEBuffer()->GetzmqData(),zmq::send_flags::none) == -1)
+        {
+            std::cout << zmq_strerror(errno) << std::endl; 
+        }
+        source->GetICEBuffer()->Serialize();
+    }else{
+        std::cout << "somehow no buffer could be found\n";
+        exit(1);
     }
 }
 
@@ -76,11 +90,11 @@ Filter_Element::process(){
     if(cb_ != nullptr){
         if(sink != nullptr){
             std::cout << "sink is not nullptr so taking its buffer\n";
-            cb_(sink->GetBuffer()); //in message = topic
+            cb_(*source->GetICEBuffer()); //in message = topic
 
         }else if(source != nullptr){
             std::cout << "source is not nullptr so taking its buffer\n";
-            cb_(source->GetBuffer()); //in message = topic
+            cb_(*source->GetICEBuffer()); //in message = topic
 
         }else{
             std::cout << "somehow no buffer could be found\n";

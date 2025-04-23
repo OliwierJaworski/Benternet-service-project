@@ -6,17 +6,25 @@
 #include <zmq.hpp>
 #include <openai.hpp>
 #include <BManager.h>
+struct testtype{
+    int data{22};
+    std::string somestring{"hello from custom data structure!"};
+};
 
-void cb_func(zmq::message_t& forwarded_data) {
+void cb_func(Bbuffer& forwarded_data) {
+    auto data = std::any_cast<testtype>(forwarded_data.GetUdataV());
+    std::cout << "value of testtype:\n data:" << data.data  << "\nsomestring:" << data.somestring << "\n";
     std::cout << "hello from callback!\n";
-    std::string tmp = BMessage::ToAnswer(forwarded_data);
+   /*zmq::message_t datazmq = forwarded_data.GetzmqData();
+    std::string tmp = BMessage::ToAnswer(datazmq);
     tmp += "your code is:";
     forwarded_data.rebuild(tmp.size());
-    memcpy(forwarded_data.data(), tmp.data(), tmp.size());
+    memcpy(forwarded_data.data(), tmp.data(), tmp.size());*/ 
 }
 
 int main() {
-    std::shared_ptr<Pipeline_T> pipeline = std::make_shared<Pipeline_T>(*BManager::context());
+    testtype data{1};
+    std::shared_ptr<Pipeline_T> pipeline = std::make_shared<Pipeline_T>(*BManager::context(),nullptr,nullptr,data);
     EFactory builder{*BManager::context()};
 
     std::string topic ="dnd_session>start?>";

@@ -6,8 +6,8 @@
 #include <nlohmann/json.hpp>
 #include <ElementTypes.h>
 
-class BManager;
 
+class BManager;
 
 /**
  * @class Pipeline-Type template
@@ -18,7 +18,7 @@ private:
     bool status{false}; // offline| not running
     bool IsContinous{false}; //whether its oneshot or not
     int elem_index{0};
-    std::shared_ptr<zmq::message_t> buffer{nullptr};
+    std::shared_ptr<Bbuffer> buffer{nullptr};
     zmq::context_t& context;
     std::vector<std::shared_ptr<Element_T>> linkedElems;
     void IClink(); //connect each Element with the next using ICElements
@@ -34,8 +34,9 @@ public:
 
     void pollevents();
     void Shutdown();
-
-    Pipeline_T(zmq::context_t& context_): context{context_}{buffer = std::make_shared<zmq::message_t>();}
+    
+    template<typename UType>
+    Pipeline_T(zmq::context_t& context_, std::function<void(zmq::message_t&)> serializeF, std::function<void(zmq::message_t&)> DeserializeF, UType data_): context{context_}{buffer = std::make_shared<Bbuffer>(serializeF, DeserializeF, data_);}
     ~Pipeline_T(){}
 };
 
@@ -83,3 +84,4 @@ public:
     static std::string ToTopic(zmq::message_t& forwarded_data);
     static std::string ToAnswer(zmq::message_t& forwarded_data);
 };
+
