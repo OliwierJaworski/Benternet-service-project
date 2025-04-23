@@ -4,25 +4,6 @@
 /**
  * ------------------------------------------------------------------------- @brief BManager 
 ***/
-void StartAll(){
-    std::cerr << "not implemented yet\n";
-    exit(1);
-}
-void 
-BManager::stopSingle(std::shared_ptr<Pipeline_T>& ref){
-    for(auto& pipeline : pipelines){
-        if(pipeline == ref){
-            pipeline->Shutdown();
-        }
-    }
-}
-void 
-BManager::stopAll(){
-    for(auto& pipeline : pipelines){
-            pipeline->Shutdown();
-    }
-}
-
 void 
 BManager::Run(){
     while (true) {
