@@ -36,7 +36,7 @@ public:
     void Shutdown();
     
     template<typename UType>
-    Pipeline_T(zmq::context_t& context_, std::function<void(zmq::message_t&)> serializeF, std::function<void(zmq::message_t&)> DeserializeF, UType data_): context{context_}{buffer = std::make_shared<zmq::message_t>(serializeF, DeserializeF, data_);}
+    Pipeline_T(zmq::context_t& context_, std::function<void(zmq::message_t&)> serializeF, std::function<void(zmq::message_t&)> DeserializeF, UType data_): context{context_}{buffer = std::make_shared<Bbuffer>(serializeF, DeserializeF, data_);}
     ~Pipeline_T(){}
 };
 

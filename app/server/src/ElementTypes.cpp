@@ -75,7 +75,7 @@ Push_Element::process(){
     }else if(source != nullptr){
         if (socket->send(source->GetICEBuffer()->GetzmqData(),zmq::send_flags::none) == -1)
         {
-            std::cout << zmq_strerror(errno) << std::endl;
+            std::cout << zmq_strerror(errno) << std::endl; 
         }
         source->GetICEBuffer()->Serialize();
     }else{
