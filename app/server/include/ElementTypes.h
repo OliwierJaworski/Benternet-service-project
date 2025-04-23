@@ -4,6 +4,7 @@
 #include <zmq.hpp>
 #include <functional>
 #include <any>
+#include <cassert>
 
 class EFactory;
 class Pipeline_T;
@@ -11,6 +12,7 @@ class Element_T;
 struct Bbuffer;
 
 typedef void (*Pollevent_cbF)(Bbuffer& forwarded_data);
+[[noreturn]] void HandleInvalid(std::string&& msg);
 
 enum ElemOPT{
     ENDPOINT,
@@ -83,7 +85,8 @@ public:
     inline void Serialize(){ if(serialize) serialize(zmqData, Udata);} 
 
     template<typename Utype>
-    Bbuffer(std::function<void(zmq::message_t&)> serializeF, std::function<void(zmq::message_t&)> DeserializeF, Utype UdataT){Udata =std::make_any<Utype>(UdataT);}
+    Bbuffer(std::function<void(zmq::message_t&)> serializeF, std::function<void(zmq::message_t&)> 
+                                DeserializeF, Utype UdataT){Udata =std::make_any<Utype>(UdataT);}
     ~Bbuffer() =default;
 private:
 
@@ -102,7 +105,8 @@ private:
  */
 struct PollItem_T{
     operator zmq::pollitem_t*() {return &item;}; 
-    PollItem_T(void* socket_, short eventtype_, Element_T& elem) : item{ .socket= socket_, .fd=-1, .events = eventtype_, .revents=0}, element{elem}{}
+    PollItem_T(void* socket_, short eventtype_, Element_T& elem) : item{ .socket= socket_, .fd=-1, .events = eventtype_, .revents=0},
+                                                                                                                     element{elem}{}
 private:
     zmq::pollitem_t item;
     Element_T& element;
@@ -121,10 +125,11 @@ public:
     std::shared_ptr<Bbuffer>& GetICEBuffer(){ return buffer;}
 
     ICElement(std::shared_ptr<Element_T>& sink_, std::shared_ptr<Element_T>& source_, std::shared_ptr<Bbuffer> shared_buffer): 
-                                    sink{sink_}, source{source_}, buffer{shared_buffer}{}
+                                                                        sink{sink_}, source{source_}, buffer{shared_buffer}{}
 
     ~ICElement() = default;
 private:
+
     std::shared_ptr<Bbuffer> buffer {nullptr};
     std::shared_ptr<Element_T> sink {nullptr};
     std::shared_ptr<Element_T> source {nullptr};
@@ -139,11 +144,11 @@ class Element_T{
     friend Pipeline_T;
 public:
     virtual void process() = 0; //main activity == send/receive/filter 
-    std::string ReturnTopic(){return topic;}
 
     virtual ~Element_T() = default;
 protected:
-    std::string topic{""};
+    Element_T(zmq::context_t& ctx): context{ctx}{};
+
     std::unique_ptr<PollItem_T> eventhandle{nullptr};
     Pollevent_cbF cb_{nullptr};
     std::vector<std::string> caps;
@@ -152,8 +157,6 @@ protected:
     std::shared_ptr<ICElement> source {nullptr};
     std::unique_ptr<zmq::socket_t> socket {nullptr};
 
-    Element_T(zmq::context_t& ctx): context{ctx}{};
-    
 private:
 
 };
@@ -168,6 +171,7 @@ public:
     EFactory(zmq::context_t& ctx): context{ctx} {type = static_cast<zmq::socket_type>(-1);}
     ~EFactory() = default;
 private:
+
     void reset() {type = static_cast<zmq::socket_type>(-1);}
     void CreateElement(Element_type type);
     zmq::context_t& context;
@@ -199,57 +203,44 @@ public:
     void process() override;
 };
 
-//cheat to fix template nonsense
 template<typename argT>
-RSLT 
-EFactory::opt(ElemOPT opt, argT arg, std::optional<const void*> optval_, std::optional<size_t> size){
-    switch(opt){
+RSLT EFactory::opt(ElemOPT opt, argT arg, std::optional<const void*> optval_, std::optional<size_t> size) {
+    switch(opt) {
         case ENDPOINT:
+            assert(element && "[ENDPOINT] Error: Element not created before setting endpoint.");
+
             if constexpr (std::is_convertible_v<argT, std::string>) {
-                if (element) {
-                    element->socket->connect(arg);
-                    return RSLT::OK;
-                } else {
-                    std::cerr << "Element not created before ENDPOINT set.\n";
-                    return RSLT::NOK;
-                }
-            } else {
-                std::cerr << "Invalid argument type for ENDPOINT (should be string-like).\n";
-                return RSLT::NOK;
-            }
+                element->socket->connect(arg);
+                return RSLT::OK;
+            } else 
+                HandleInvalid("[ENDPOINT] Error: Invalid argument type (must be string-like)");
 
         case SOCKCREATE:
             if constexpr (std::is_same_v<argT, Element_type>) {
                 CreateElement(arg);
                 return RSLT::OK;
-            } else {
-                std::cerr << "Invalid argument type for SOCKCREATE (should be Element_type).\n";
-                return RSLT::NOK;
-            }
+            } else 
+                HandleInvalid("[SOCKCREATE] Error: Argument must be of type Element_type.");
+            
 
         case SOCKOPT:
             if constexpr (std::is_same_v<argT, int>) {
                 if (element && optval_.has_value() && size.has_value()) {
                     element->socket->setsockopt(arg, optval_.value(), size.value());
                     return RSLT::OK;
-                } else {
-                    std::cerr << "Missing socket or optional parameters for SOCKOPT.\n";
-                    return RSLT::NOK;
-                }
-            } else {
-                std::cerr << "Invalid argument type for SOCKOPT (should be int).\n";
-                return RSLT::NOK;
-            }
+                } else 
+                    HandleInvalid("[SOCKOPT] Error: Missing socket or optional parameters.");
+            } else 
+                HandleInvalid("[SOCKOPT] Error: Argument must be of type int.");
+
         case SOCK_CB:
             if constexpr (std::is_same_v<argT, Pollevent_cbF>) {
-               element->cb_ = arg;
-               return RSLT::OK;
-            } else {
-                std::cerr << "Invalid argument type for SOCK_CB (should be Pollevent_cbF).\n";
-                return RSLT::NOK;
-            }
+                element->cb_ = arg;
+                return RSLT::OK;
+            } else 
+                HandleInvalid("[SOCK_CB] Error: Argument must be of type Pollevent_cbF.");
+
         default:
-            std::cerr << "Unsupported ElemOPT value.\n";
-            return RSLT::NOK;
+            HandleInvalid("[EFactory::opt] Error: Unsupported ElemOPT value.");
     }
 }

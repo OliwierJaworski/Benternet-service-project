@@ -28,7 +28,6 @@ BManager::Run(){
  * ------------------------------------------------------------------------- @brief Pipeline_T 
 ***/
 
-
 void 
 Pipeline_T::Shutdown(){
     SetStatus(false);
@@ -43,8 +42,7 @@ Pipeline_T::Shutdown(){
 void
 Pipeline_T::IClink(){
     if(linkedElems.size() < 2){
-        std::cerr << "must be atleast 2 elements to create a working pipeline!\n";
-        exit(1);
+        HandleInvalid("must be atleast 2 elements to create a working pipeline");
     }
     for (auto cr = linkedElems.begin(); cr + 1 != linkedElems.end(); cr++) {
         auto& current = *cr;
@@ -91,38 +89,6 @@ Pipeline_T::pollevents(){
     }
     
     if(!IsContinous && elem_index == linkedElems.size()){
-        //if oneshot and the pipeline has been traversed
-        status =false;
+        status =false;  //if oneshot and the pipeline has been traversed
     }
 }
-
-/**
- * ------------------------------------------------------------------------- @brief BMessage 
-***/
-
-std::string 
-BMessage::ToTopic(zmq::message_t& forwarded_data){
-    std::string result = forwarded_data.to_string();
-    size_t index=0;
-    for(int f=0;f<3; f++){ // topic>session>name>
-        index = result.find(">",index+1);
-    }
-    result= result.substr(0,index+1);
-    std::cout << "topic>session>name> ->" << result << "\n";
-    return result;
-}  
-
-std::string 
-BMessage::ToAnswer(zmq::message_t& forwarded_data){
-    std::string result = forwarded_data.to_string();
-    size_t index=0;
-    for(int f=0;f<3; f++){ // topic>session>name>
-        index = result.find(">",index+1);
-    }
-    result= result.substr(0,index+1);
-    index = result.find("?");
-    result[index] = '!';
-
-    std::cout << "answers to:" << result << "\n";
-    return result;
-}  

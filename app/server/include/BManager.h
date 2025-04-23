@@ -6,7 +6,6 @@
 #include <nlohmann/json.hpp>
 #include <ElementTypes.h>
 
-
 class BManager;
 
 /**
@@ -14,7 +13,18 @@ class BManager;
  * @brief Template for derived Pipeline implementations
  */
 class Pipeline_T{
+    friend BManager;
+public:
+    template<typename... Ptrs>
+    int ElementLink(std::unique_ptr<Element_T>&& first, Ptrs&&... rest);//loop over atleast 1 item so user does not call empty function
+    void pollevents();
+    
+    template<typename UType>
+    Pipeline_T(zmq::context_t& context_, std::function<void(zmq::message_t&)> serializeF, std::function<void(zmq::message_t&)> DeserializeF, 
+                                        UType data_): context{context_}{buffer = std::make_shared<Bbuffer>(serializeF, DeserializeF, data_);}
+    ~Pipeline_T(){}
 private:
+
     bool status{false}; // offline| not running
     bool IsContinous{false}; //whether its oneshot or not
     int elem_index{0};
@@ -22,22 +32,11 @@ private:
     zmq::context_t& context;
     std::vector<std::shared_ptr<Element_T>> linkedElems;
     void IClink(); //connect each Element with the next using ICElements
-    
-public:
-
-    template<typename... Ptrs>
-    int ElementLink(std::unique_ptr<Element_T>&& first, Ptrs&&... rest);//loop over atleast 1 item so user does not call empty function
+    void Shutdown();
     void SetStatus(bool status_){status = status_;}
     bool GetStatus(){return status;}// eg. running or not 
     void SetIsContinous(bool status_){IsContinous = status_;}
     bool GetIsContinous(){return IsContinous;}// eg. running or not 
-
-    void pollevents();
-    void Shutdown();
-    
-    template<typename UType>
-    Pipeline_T(zmq::context_t& context_, std::function<void(zmq::message_t&)> serializeF, std::function<void(zmq::message_t&)> DeserializeF, UType data_): context{context_}{buffer = std::make_shared<Bbuffer>(serializeF, DeserializeF, data_);}
-    ~Pipeline_T(){}
 };
 
 /**
@@ -49,32 +48,34 @@ public:
  */
 
 class BManager{
-private:
-    std::vector<std::shared_ptr<Pipeline_T>> pipelines;
-    
-    BManager(){}
-    ~BManager(){}
 public:
     inline static BManager& instance() { static BManager BManagers; return BManagers; }
     inline static zmq::context_t* context() { static zmq::context_t context{1}; return &context;} 
 
     //pipeline running 
-    void EnableSingle(std::shared_ptr<Pipeline_T>& ref) {ref->SetStatus(true); pipelines.push_back(ref);}
-    void EnableAll() { for(auto& pipeline : pipelines) pipeline->SetStatus(true);}
+    inline void EnableSingle(std::shared_ptr<Pipeline_T>& ref) {ref->SetStatus(true); pipelines.push_back(ref);}
+    inline void EnableAll() { for(auto& pipeline : pipelines) pipeline->SetStatus(true);}
 
     //pipeline not running 
-    void stopSingle(std::shared_ptr<Pipeline_T>& ref) {ref->SetStatus(false); pipelines.push_back(ref);}
-    void stopAll() { for(auto& pipeline : pipelines) pipeline->SetStatus(false);}
+    inline void stopSingle(std::shared_ptr<Pipeline_T>& ref) {ref->SetStatus(false); pipelines.push_back(ref);}
+    inline void stopAll() { for(auto& pipeline : pipelines) pipeline->SetStatus(false);}
 
     //delete pipeline with elements
-    void DropSingle(std::shared_ptr<Pipeline_T>& ref) {ref->Shutdown();}
-    void DropAll() { for(auto& pipeline : pipelines) pipeline->Shutdown();}
+    inline void DropSingle(std::shared_ptr<Pipeline_T>& ref) {ref->Shutdown();}
+    inline void DropAll() { for(auto& pipeline : pipelines) pipeline->Shutdown();}
 
     //execute traversal of pipelines
     void Run();
     //shutdown the context and sockets
-    void shutdown() {for(auto& pipeline : pipelines) pipeline->Shutdown(); BManager::context()->close();}
+    inline void shutdown() {for(auto& pipeline : pipelines) pipeline->Shutdown(); BManager::context()->close();}
+
+private:
+    BManager(){}
+    ~BManager(){}
+    
+    std::vector<std::shared_ptr<Pipeline_T>> pipelines;
 };
+
 
 
 template<typename... Ptrs>
@@ -86,12 +87,5 @@ Pipeline_T::ElementLink(std::unique_ptr<Element_T>&& first, Ptrs&&... rest){
     return 0;
 }
 
-class BMessage{
-private:
-    BMessage(){}
-    ~BMessage(){}
-public:
-    static std::string ToTopic(zmq::message_t& forwarded_data);
-    static std::string ToAnswer(zmq::message_t& forwarded_data);
-};
+
 
