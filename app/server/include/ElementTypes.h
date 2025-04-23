@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <zmq.hpp>
+#include <functional>
+#include <any>
 
 class EFactory;
 class Pipeline_T;
@@ -58,6 +60,38 @@ enum class Element_type : int
 };
 #endif
 
+
+struct Bbuffer{
+public:
+    inline auto& GetUdataV(){return Udata;} 
+    inline auto& GetUdataT(){return Udata;}
+    
+    template<typename Utype>
+    inline void SetUdata(Utype value) {
+        if (!Udata.has_value()) {
+            Udata = std::make_any<Utype>(std::move(value));
+        } else if (Udata.type() == typeid(Utype)) {
+            Udata = std::make_any<Utype>(std::move(value));
+        } else {
+            throw std::runtime_error("Udata already set to a different type");
+        }
+    }
+
+    inline auto& GetzmqData(){return zmqData;}
+
+    inline void Deserialize(){deserialize(zmqData, Udata);}
+    inline void Serialize(){serialize(zmqData, Udata);} 
+
+    template<typename Utype>
+    Bbuffer(std::function<void(zmq::message_t&)> serializeF, std::function<void(zmq::message_t&)> DeserializeF, Utype UdataT){Udata =std::make_any<Utype>(UdataT);}
+    ~Bbuffer() =default;
+private:
+    zmq::message_t zmqData;
+    std::any Udata;
+    std::function<void(zmq::message_t&, std::any&)> deserialize;
+    std::function<void(zmq::message_t&, std::any&)> serialize;
+};
+
 /**
  * @class templated PollItem_T
  * @brief structure for event logging and callbacks
@@ -84,14 +118,14 @@ struct ICElement{
     friend Pipeline_T;
 public:
     void SetBuffer(zmq::message_t newvalue){*buffer = std::move(newvalue);}
-    zmq::message_t& GetBuffer(){return *buffer;};
+    auto& GetBuffer(){return *buffer;};
 
-    ICElement(std::shared_ptr<Element_T>& sink_, std::shared_ptr<Element_T>& source_, std::shared_ptr<zmq::message_t>& shared_buffer): 
+    ICElement(std::shared_ptr<Element_T>& sink_, std::shared_ptr<Element_T>& source_, auto& shared_buffer): 
                                     sink{sink_}, source{source_}, buffer{shared_buffer}{}
 
     ~ICElement() = default;
 private:
-    std::shared_ptr<zmq::message_t> buffer {nullptr};
+    std::shared_ptr<Bbuffer> buffer {nullptr};
     std::shared_ptr<Element_T> sink {nullptr};
     std::shared_ptr<Element_T> source {nullptr};
 };
