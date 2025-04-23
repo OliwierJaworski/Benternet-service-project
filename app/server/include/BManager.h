@@ -9,9 +9,6 @@
 
 class BManager;
 
-
-
-
 /**
  * @class Pipeline-Type template
  * @brief Template for derived Pipeline implementations

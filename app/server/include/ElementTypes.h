@@ -8,8 +8,9 @@
 class EFactory;
 class Pipeline_T;
 class Element_T;
+struct Bbuffer;
 
-typedef void (*Pollevent_cbF)(zmq::message_t& forwarded_data);
+typedef void (*Pollevent_cbF)(Bbuffer& forwarded_data);
 
 enum ElemOPT{
     ENDPOINT,
@@ -65,7 +66,8 @@ struct Bbuffer{
 public:
     inline auto& GetUdataV(){return Udata;} 
     inline auto& GetUdataT(){return Udata;}
-    
+    inline auto& GetzmqData(){return zmqData;}
+
     template<typename Utype>
     inline void SetUdata(Utype value) {
         if (!Udata.has_value()) {
@@ -75,17 +77,16 @@ public:
         } else {
             throw std::runtime_error("Udata already set to a different type");
         }
-    }
+    }    
 
-    inline auto& GetzmqData(){return zmqData;}
-
-    inline void Deserialize(){deserialize(zmqData, Udata);}
-    inline void Serialize(){serialize(zmqData, Udata);} 
+    inline void Deserialize(){if(deserialize) deserialize(zmqData, Udata);}
+    inline void Serialize(){ if(serialize) serialize(zmqData, Udata);} 
 
     template<typename Utype>
     Bbuffer(std::function<void(zmq::message_t&)> serializeF, std::function<void(zmq::message_t&)> DeserializeF, Utype UdataT){Udata =std::make_any<Utype>(UdataT);}
     ~Bbuffer() =default;
 private:
+
     zmq::message_t zmqData;
     std::any Udata;
     std::function<void(zmq::message_t&, std::any&)> deserialize;
@@ -116,11 +117,10 @@ private:
  */
 struct ICElement{
     friend Pipeline_T;
-public:
-    void SetBuffer(zmq::message_t newvalue){*buffer = std::move(newvalue);}
-    auto& GetBuffer(){return *buffer;};
+public:    
+    std::shared_ptr<Bbuffer>& GetICEBuffer(){ return buffer;}
 
-    ICElement(std::shared_ptr<Element_T>& sink_, std::shared_ptr<Element_T>& source_, auto& shared_buffer): 
+    ICElement(std::shared_ptr<Element_T>& sink_, std::shared_ptr<Element_T>& source_, std::shared_ptr<Bbuffer> shared_buffer): 
                                     sink{sink_}, source{source_}, buffer{shared_buffer}{}
 
     ~ICElement() = default;

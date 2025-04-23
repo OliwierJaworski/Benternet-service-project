@@ -14,6 +14,9 @@ void cb_func(zmq::message_t& forwarded_data) {
     forwarded_data.rebuild(tmp.size());
     memcpy(forwarded_data.data(), tmp.data(), tmp.size());
 }
+struct testtype{
+    int i;
+};
 
 int main() {
     std::shared_ptr<Pipeline_T> pipeline = std::make_shared<Pipeline_T>(*BManager::context());
