@@ -58,12 +58,22 @@ public:
     inline static BManager& instance() { static BManager BManagers; return BManagers; }
     inline static zmq::context_t* context() { static zmq::context_t context{1}; return &context;} 
 
-    //pipeline running | not running
-    void StartSingle(std::shared_ptr<Pipeline_T>& ref) {ref->SetStatus(true); pipelines.push_back(ref);}
-    void StartAll();
-    void stopSingle(std::shared_ptr<Pipeline_T>& ref);
-    void stopAll();
+    //pipeline running 
+    void EnableSingle(std::shared_ptr<Pipeline_T>& ref) {ref->SetStatus(true); pipelines.push_back(ref);}
+    void EnableAll() { for(auto& pipeline : pipelines) pipeline->SetStatus(true);}
+
+    //pipeline not running 
+    void stopSingle(std::shared_ptr<Pipeline_T>& ref) {ref->SetStatus(false); pipelines.push_back(ref);}
+    void stopAll() { for(auto& pipeline : pipelines) pipeline->SetStatus(false);}
+
+    //delete pipeline with elements
+    void DropSingle(std::shared_ptr<Pipeline_T>& ref) {ref->Shutdown();}
+    void DropAll() { for(auto& pipeline : pipelines) pipeline->Shutdown();}
+
+    //execute traversal of pipelines
     void Run();
+    //shutdown the context and sockets
+    void shutdown() {for(auto& pipeline : pipelines) pipeline->Shutdown(); BManager::context()->close();}
 };
 
 
