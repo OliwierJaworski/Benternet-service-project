@@ -72,17 +72,18 @@ public:
 
     template<typename Utype>
     inline void SetUdata(Utype value) {
+        
         if (!Udata.has_value()) {
-            Udata = std::make_any<Utype>(std::move(value));
+            Udata = std::move(value); //  Udata = std::make_any<Utype>(std::move(value)); <-- does not work??
         } else if (Udata.type() == typeid(Utype)) {
-            Udata = std::make_any<Utype>(std::move(value));
+            Udata = std::move(value);
         } else {
             throw std::runtime_error("Udata already set to a different type");
         }
     }    
 
-    template<typename Utype>
-    Bbuffer(Utype UdataT){Udata =std::make_any<Utype>(UdataT);}
+    
+    Bbuffer() = default;
     ~Bbuffer() =default;
 private:
 

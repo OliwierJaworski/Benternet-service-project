@@ -16,9 +16,7 @@ int main() {
     EFactory Elembuilder{*BManager::context()};
     PFactory PipelineBuilder{*BManager::context()};
 
-    auto any_data = std::make_shared<std::any>(testtype{});
-
-    PipelineBuilder.AddData(any_data);
+    PipelineBuilder.UserDataType<testtype>();
     Pipeline_W pipeline = PipelineBuilder.build();
 
     std::string topic ="dnd_session>start?>";
@@ -27,7 +25,7 @@ int main() {
     Elembuilder.opt(ElemOPT::SOCKCREATE, Element_type::sub);
     Elembuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24042");
     Elembuilder.opt(ElemOPT::SOCKOPT, ZMQ_SUBSCRIBE, topic.c_str(), topic.size());
-    Elembuilder.AddPackMethod(DeserializeMethod);
+    Elembuilder.AddUnpackMethod(DeserializeMethod);
     auto RecvStart = Elembuilder.build();
 
     std::cout << "filter creation!\n";
@@ -60,6 +58,7 @@ int main() {
 
 
 void cb_func(Bbuffer& forwarded_data) {
+    std::cout << forwarded_data.GetUdataV().type().name() << "\n";
     auto data = std::any_cast<testtype>(forwarded_data.GetUdataV());
     std::cout << "value of testtype:\n data:" << data.data  << "\nsomestring:" << data.somestring << "\n";
     std::cout << "hello from callback!\n";

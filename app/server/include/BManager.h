@@ -29,9 +29,9 @@ public:
 private:
 
     template<typename UType>
-    static std::shared_ptr<Pipeline_T> create(zmq::context_t& ctx, UType& data) { return std::shared_ptr<Pipeline_T>(new Pipeline_T(ctx, std::move(data)));}
+    static std::shared_ptr<Pipeline_T> create(zmq::context_t& ctx, UType& data) {std::cout<< "\n usertype2:"<< data.type().name()<< "\n"; return std::shared_ptr<Pipeline_T>(new Pipeline_T(ctx, std::move(data)));}
     template<typename UType>
-    Pipeline_T(zmq::context_t& context_, UType data_): context{context_}{buffer->SetUdata(data_);}
+    Pipeline_T(zmq::context_t& context_, UType data_): context{context_}{std::cout<< "\n usertype3:"<< data_.type().name()<< "\n"; if(!buffer) buffer = std::make_shared<Bbuffer>(); buffer->SetUdata(data_); }
     
     bool status{false}; // offline| not running
     bool IsContinous{false}; //whether its oneshot or not
@@ -108,7 +108,8 @@ private:
 class PFactory{
     public:
         Pipeline_W build();
-        inline void AddData(std::shared_ptr<std::any>& data_){buffer = data_;}
+        template <typename Utype>
+        inline void UserDataType(){buffer = std::make_any<Utype>(Utype{}); std::cout<< "\n usertype:"<< buffer.type().name()<< "\n"; } //if user type needs default values this does not work
 
         PFactory(zmq::context_t& ctx): context{ctx} {}
         ~PFactory() = default;
@@ -116,7 +117,7 @@ class PFactory{
     
         void reset();
         zmq::context_t& context;
-        std::shared_ptr<std::any> buffer = nullptr;
+        std::any buffer;
 };
 
 struct testtype{
