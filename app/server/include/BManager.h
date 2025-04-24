@@ -29,7 +29,7 @@ public:
 private:
 
     template<typename UType>
-    static std::shared_ptr<Pipeline_T> create(zmq::context_t& ctx, UType data) { return std::shared_ptr<Pipeline_T>(new Pipeline_T(ctx, std::move(data)));}
+    static std::shared_ptr<Pipeline_T> create(zmq::context_t& ctx, UType& data) { return std::shared_ptr<Pipeline_T>(new Pipeline_T(ctx, std::move(data)));}
     template<typename UType>
     Pipeline_T(zmq::context_t& context_, UType data_): context{context_}{}
     
@@ -116,5 +116,10 @@ class PFactory{
     
         void reset();
         zmq::context_t& context;
-        std::shared_ptr<std::any> buffer;
+        std::shared_ptr<std::any> buffer = nullptr;
+};
+
+struct testtype{
+    int data{22};
+    std::string somestring{"hello from custom data structure!"};
 };

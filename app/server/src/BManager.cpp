@@ -96,7 +96,6 @@ Pipeline_T::pollevents(){
 Pipeline_W
 PFactory::build(){
     assert(buffer && "Could not build Pipeline due to missing objects");
-
     std::shared_ptr<Pipeline_T> tmpP = Pipeline_T::create(context, buffer);
     Pipeline_W wrapper(tmpP);
     reset();

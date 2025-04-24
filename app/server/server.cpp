@@ -6,10 +6,7 @@
 #include <zmq.hpp>
 #include <openai.hpp>
 #include <BManager.h>
-struct testtype{
-    int data{22};
-    std::string somestring{"hello from custom data structure!"};
-};
+
 
 void cb_func(Bbuffer& forwarded_data); 
 void serializemethod(zmq::message_t&, std::any&);
