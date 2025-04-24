@@ -32,73 +32,75 @@ void EFactory::CreateElement(Element_type type) {
             break;
 
         default:
-            std::cerr << "Unknown element type" << std::endl;
-            exit(1);
+            HandleInvalid("Unknown element type");
             break;
     }
 }
 
 void
 Sub_Element::process(){
-    std::cout << "process of sub element\n";
     
+    assert(sink || source || Deserialize); 
+
     if(sink != nullptr){
         if (socket->recv(sink->GetICEBuffer()->GetzmqData(), zmq::recv_flags::none) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl;
         }
-        sink->GetICEBuffer()->Deserialize();
-    }else if(source != nullptr){
+        Deserialize(sink->GetICEBuffer()->GetzmqData(),sink->GetICEBuffer()->GetUdataV());
+    }else{
         if (socket->recv(source->GetICEBuffer()->GetzmqData(), zmq::recv_flags::none) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl;
         }
-        source->GetICEBuffer()->Deserialize();
-    }else{
-        std::cout << "somehow no buffer could be found\n";
-        exit(1);
+        Deserialize(source->GetICEBuffer()->GetzmqData(),source->GetICEBuffer()->GetUdataV());
     }
 }
 
 void
 Push_Element::process(){
-    std::cout << "process of push element\n";
+
+    assert(sink || source || Serialize); 
 
     std::string buffer; 
 
     if(sink != nullptr){
+        Serialize(sink->GetICEBuffer()->GetzmqData(),sink->GetICEBuffer()->GetUdataV());
         if (socket->send(sink->GetICEBuffer()->GetzmqData(),zmq::send_flags::none) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl;
         }
-        sink->GetICEBuffer()->Serialize();
-    }else if(source != nullptr){
+        
+    }else{
+        Serialize(source->GetICEBuffer()->GetzmqData(),source->GetICEBuffer()->GetUdataV());
         if (socket->send(source->GetICEBuffer()->GetzmqData(),zmq::send_flags::none) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl; 
         }
-        source->GetICEBuffer()->Serialize();
-    }else{
-        std::cout << "somehow no buffer could be found\n";
-        exit(1);
     }
 }
 
 void
 Filter_Element::process(){
-    std::cout << "process of Filter element\n";
+
+    assert(sink || source); 
+
     if(cb_ != nullptr){
         if(sink != nullptr){
             std::cout << "sink is not nullptr so taking its buffer\n";
             cb_(*source->GetICEBuffer()); //in message = topic
 
-        }else if(source != nullptr){
+        }else{
             std::cout << "source is not nullptr so taking its buffer\n";
             cb_(*source->GetICEBuffer()); //in message = topic
 
-        }else{
-            std::cout << "somehow no buffer could be found\n";
-            exit(1);
         }
     }
+}
+
+
+[[noreturn]] void HandleInvalid(std::string&& msg){
+    std::cerr << msg <<"\n";
+    assert(false);
+    std::exit(1);
 }
