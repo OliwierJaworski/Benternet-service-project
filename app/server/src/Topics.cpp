@@ -4,12 +4,14 @@ using namespace Benternet;
 void 
 BTopics::run(){
     CreateMainThread();
+    BManager::instance().Run();
+    BManager::instance().shutdown();
 }
 void 
 BTopics::CreateMainThread(){
     MainTopic TopicData;
     std::string topic = TopicData.recvtopic();
-
+    std::cout << "\n"<<topic<< "\n";
     //receiving element
     Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::sub);
     Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24042");
@@ -20,29 +22,48 @@ BTopics::CreateMainThread(){
     //Data Filter element
     Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::filter);
     Ebuilder.opt(ElemOPT::SOCK_CB, MainTopic::filter_cb);
-    auto RecvStart = Ebuilder.build();
+    auto processreply = Ebuilder.build();
 
     //Send element
     Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::push);
     Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24041");
     Ebuilder.AddPackMethod(MainTopic::PackMethod);
-    auto RecvStart = Ebuilder.build();
+    auto sendReply = Ebuilder.build();
 
     Pbuilder.UserDataType<MainTopic>(TopicData); //keep it as last because TopicData might be needed
+    Pipeline_W pipeline = Pbuilder.build();
+    pipelines.push_back( std::move(pipeline) );
+
+    pipeline.ElementLink(
+        std::move(RecvStart),
+        std::move(processreply),
+        std::move(sendReply)
+    );
+
+    BManager::instance().EnableSingle(pipeline);
 }
 
 void 
 MainTopic::filter_cb(Bbuffer& forwarded_data){
-    auto dataCB = std::any_cast<testtype>(forwarded_data.GetUdataV());
-    
+    std::cout << "hello from callback!\n";
+
+    std::cout << forwarded_data.GetUdataV().type().name() << "\n";
+    auto data = std::any_cast<MainTopic>(forwarded_data.GetUdataV());
+
+   /*zmq::message_t datazmq = forwarded_data.GetzmqData();
+    std::string tmp = BMessage::ToAnswer(datazmq);
+    tmp += "your code is:";
+    forwarded_data.rebuild(tmp.size());
+    memcpy(forwarded_data.data(), tmp.data(), tmp.size());*/ 
+
 }
 
 void 
-MainTopic::UnpackMethod(std::function<void (zmq::message_t &, std::any &)> deser){
+MainTopic::UnpackMethod(zmq::message_t &, std::any &){
 
 }
 
 void 
-MainTopic::PackMethod(std::function<void (zmq::message_t &, std::any &)> deser){
+MainTopic::PackMethod(zmq::message_t &, std::any &){
 
 }
