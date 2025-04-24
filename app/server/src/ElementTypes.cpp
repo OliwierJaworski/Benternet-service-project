@@ -41,6 +41,8 @@ void
 Sub_Element::process(){
     
     assert(sink || source || Deserialize); 
+    if(!Deserialize) 
+        HandleInvalid("[UnpackMethod] Error: no deserialization function provided");
 
     if(sink != nullptr){
         if (socket->recv(sink->GetICEBuffer()->GetzmqData(), zmq::recv_flags::none) == -1)
@@ -60,7 +62,9 @@ Sub_Element::process(){
 void
 Push_Element::process(){
 
-    assert(sink || source || Serialize); 
+    assert(sink || source);
+    if(!Serialize) 
+        HandleInvalid("[PackMethod] Error: no Serialization function provided");
 
     std::string buffer; 
 
@@ -99,8 +103,11 @@ Filter_Element::process(){
 }
 
 
-[[noreturn]] void HandleInvalid(std::string&& msg){
-    std::cerr << msg <<"\n";
-    assert(false);
-    std::exit(1);
+[[noreturn]] void ThrowInvalid(std::string&& msg){
+    throw std::runtime_error(std::move(msg));
+}
+
+[[noreturn]] void HandleInvalid(std::string&& msg) {
+    std::cerr << "\033[1;31m" << "[ERROR] " << msg << "\033[0m\n"; // Reset
+    std::_Exit(1);
 }

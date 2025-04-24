@@ -35,13 +35,12 @@ int main() {
 
     std::cout << "send creation!\n";
     Elembuilder.opt(ElemOPT::SOCKCREATE, Element_type::push);
-    //builder.opt(ElemOPT::ENDPOINT, "tcp://localhost:5554");
     Elembuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24041");
-    Elembuilder.AddPackMethod(serializemethod);
+    //Elembuilder.AddPackMethod(serializemethod);
     auto sendReply = Elembuilder.build();
 
     pipeline.ElementLink(
-        std::move(RecvStart),
+        //std::move(RecvStart),
         std::move(processreply),
         std::move(sendReply)
     );
