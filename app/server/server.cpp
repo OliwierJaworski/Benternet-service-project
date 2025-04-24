@@ -3,9 +3,8 @@
 #include <thread>
 #include <iostream>
 
-#include <zmq.hpp>
-#include <openai.hpp>
-#include <BManager.h>
+#include "Topics.h"
+
 
 
 void cb_func(Bbuffer& forwarded_data); 
@@ -16,7 +15,7 @@ int main() {
     EFactory Elembuilder{*BManager::context()};
     PFactory PipelineBuilder{*BManager::context()};
 
-    PipelineBuilder.UserDataType<testtype>();
+    //PipelineBuilder.UserDataType<testtype>();
     Pipeline_W pipeline = PipelineBuilder.build();
 
     std::string topic ="dnd_session>start?>";

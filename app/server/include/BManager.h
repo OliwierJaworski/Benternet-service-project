@@ -109,7 +109,7 @@ class PFactory{
     public:
         Pipeline_W build();
         template <typename Utype>
-        inline void UserDataType(){buffer = std::make_any<Utype>(Utype{}); std::cout<< "\n usertype:"<< buffer.type().name()<< "\n"; } //if user type needs default values this does not work
+        inline void UserDataType(Utype& data){buffer = std::make_any<Utype>(std::move(data)); std::cout<< "\n usertype:"<< buffer.type().name()<< "\n"; } //if user type needs default values this does not work
 
         PFactory(zmq::context_t& ctx): context{ctx} {}
         ~PFactory() = default;
