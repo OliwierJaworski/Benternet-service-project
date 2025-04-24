@@ -67,7 +67,7 @@ enum class Element_type : int
 struct Bbuffer{
 public:
     inline auto& GetUdataV(){return Udata;} 
-    inline auto& GetUdataT(){return Udata;}
+    inline auto& GetUdataT(){return Udata.type();} //should return datatype
     inline auto& GetzmqData(){return zmqData;}
 
     template<typename Utype>
@@ -82,8 +82,7 @@ public:
     }    
 
     template<typename Utype>
-    Bbuffer(std::function<void(zmq::message_t&)> serializeF, std::function<void(zmq::message_t&)> 
-                                DeserializeF, Utype UdataT){Udata =std::make_any<Utype>(UdataT);}
+    Bbuffer(Utype UdataT){Udata =std::make_any<Utype>(UdataT);}
     ~Bbuffer() =default;
 private:
 
