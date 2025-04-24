@@ -40,42 +40,43 @@ void EFactory::CreateElement(Element_type type) {
 void
 Sub_Element::process(){
     
-    assert(sink || source); 
+    assert(sink || source || Deserialize); 
 
     if(sink != nullptr){
         if (socket->recv(sink->GetICEBuffer()->GetzmqData(), zmq::recv_flags::none) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl;
         }
-        sink->GetICEBuffer()->Deserialize();
+        Deserialize(sink->GetICEBuffer()->GetzmqData(),sink->GetICEBuffer()->GetUdataV());
     }else{
         if (socket->recv(source->GetICEBuffer()->GetzmqData(), zmq::recv_flags::none) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl;
         }
-        source->GetICEBuffer()->Deserialize();
+        Deserialize(source->GetICEBuffer()->GetzmqData(),source->GetICEBuffer()->GetUdataV());
     }
 }
 
 void
 Push_Element::process(){
 
-    assert(sink || source); 
+    assert(sink || source || Serialize); 
 
     std::string buffer; 
 
     if(sink != nullptr){
+        Serialize(sink->GetICEBuffer()->GetzmqData(),sink->GetICEBuffer()->GetUdataV());
         if (socket->send(sink->GetICEBuffer()->GetzmqData(),zmq::send_flags::none) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl;
         }
-        sink->GetICEBuffer()->Serialize();
+        
     }else{
+        Serialize(source->GetICEBuffer()->GetzmqData(),source->GetICEBuffer()->GetUdataV());
         if (socket->send(source->GetICEBuffer()->GetzmqData(),zmq::send_flags::none) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl; 
         }
-        source->GetICEBuffer()->Serialize();
     }
 }
 

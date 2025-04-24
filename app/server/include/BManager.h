@@ -7,24 +7,32 @@
 #include <ElementTypes.h>
 
 class BManager;
+class PFactory;
 
 /**
  * @class Pipeline-Type template
  * @brief Template for derived Pipeline implementations
  */
 class Pipeline_T{
-    friend BManager;
+   friend PFactory;
 public:
     template<typename... Ptrs>
     int ElementLink(std::unique_ptr<Element_T>&& first, Ptrs&&... rest);//loop over atleast 1 item so user does not call empty function
     void pollevents();
+    void Shutdown();
+    void SetStatus(bool status_){status = status_;}
+    bool GetStatus(){return status;}// eg. running or not 
+    void SetIsContinous(bool status_){IsContinous = status_;}
+    bool GetIsContinous(){return IsContinous;}// eg. running or not 
     
-    template<typename UType>
-    Pipeline_T(zmq::context_t& context_, std::function<void(zmq::message_t&)> serializeF, std::function<void(zmq::message_t&)> DeserializeF, 
-                                        UType data_): context{context_}{buffer = std::make_shared<Bbuffer>(serializeF, DeserializeF, data_);}
     ~Pipeline_T(){}
 private:
 
+    template<typename UType>
+    static std::shared_ptr<Pipeline_T> create(zmq::context_t& ctx, UType data) { return std::shared_ptr<Pipeline_T>(new Pipeline_T(ctx, std::move(data)));}
+    template<typename UType>
+    Pipeline_T(zmq::context_t& context_, UType data_): context{context_}{}
+    
     bool status{false}; // offline| not running
     bool IsContinous{false}; //whether its oneshot or not
     int elem_index{0};
@@ -32,12 +40,9 @@ private:
     zmq::context_t& context;
     std::vector<std::shared_ptr<Element_T>> linkedElems;
     void IClink(); //connect each Element with the next using ICElements
-    void Shutdown();
-    void SetStatus(bool status_){status = status_;}
-    bool GetStatus(){return status;}// eg. running or not 
-    void SetIsContinous(bool status_){IsContinous = status_;}
-    bool GetIsContinous(){return IsContinous;}// eg. running or not 
 };
+
+
 
 /**
  * @class Benternet Manager
@@ -87,5 +92,29 @@ Pipeline_T::ElementLink(std::unique_ptr<Element_T>&& first, Ptrs&&... rest){
     return 0;
 }
 
+class Pipeline_W{
+public:
+    template<typename... Ptrs>
+    inline int ElementLink(std::unique_ptr<Element_T>&& first, Ptrs&&... rest) { return pipeline->ElementLink(std::move(first), std::forward<Ptrs>(rest)...);}
 
+    operator std::shared_ptr<Pipeline_T>& () {return pipeline;} 
 
+    Pipeline_W( std::shared_ptr<Pipeline_T>& pipeline_){pipeline = pipeline_;}
+    ~Pipeline_W() = default;
+private:
+    std::shared_ptr<Pipeline_T> pipeline;
+};
+
+class PFactory{
+    public:
+        Pipeline_W build();
+        inline void AddData(std::shared_ptr<std::any>& data_){buffer = data_;}
+
+        PFactory(zmq::context_t& ctx): context{ctx} {}
+        ~PFactory() = default;
+    private:
+    
+        void reset();
+        zmq::context_t& context;
+        std::shared_ptr<std::any> buffer;
+};

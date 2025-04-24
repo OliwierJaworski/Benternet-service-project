@@ -92,3 +92,18 @@ Pipeline_T::pollevents(){
         status =false;  //if oneshot and the pipeline has been traversed
     }
 }
+
+Pipeline_W
+PFactory::build(){
+    assert(buffer && "Could not build Pipeline due to missing objects");
+
+    std::shared_ptr<Pipeline_T> tmpP = Pipeline_T::create(context, buffer);
+    Pipeline_W wrapper(tmpP);
+    reset();
+    return std::move(wrapper);
+}
+
+void
+PFactory::reset(){
+    buffer.reset();
+}

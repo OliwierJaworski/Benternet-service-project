@@ -81,9 +81,6 @@ public:
         }
     }    
 
-    inline void Deserialize(){if(deserialize) deserialize(zmqData, Udata);}
-    inline void Serialize(){ if(serialize) serialize(zmqData, Udata);} 
-
     template<typename Utype>
     Bbuffer(std::function<void(zmq::message_t&)> serializeF, std::function<void(zmq::message_t&)> 
                                 DeserializeF, Utype UdataT){Udata =std::make_any<Utype>(UdataT);}
@@ -92,8 +89,6 @@ private:
 
     zmq::message_t zmqData;
     std::any Udata;
-    std::function<void(zmq::message_t&, std::any&)> deserialize;
-    std::function<void(zmq::message_t&, std::any&)> serialize;
 };
 
 /**
@@ -156,6 +151,8 @@ protected:
     std::shared_ptr<ICElement> sink {nullptr};
     std::shared_ptr<ICElement> source {nullptr};
     std::unique_ptr<zmq::socket_t> socket {nullptr};
+    std::function<void(zmq::message_t&, std::any&)> Deserialize;
+    std::function<void(zmq::message_t&, std::any&)> Serialize;
 
 private:
 
@@ -167,6 +164,8 @@ public:
     template<typename argT>
     RSLT opt(ElemOPT opt, argT  arg, 
              std::optional<const void*> optval_= std::nullopt , std::optional<size_t> size = std::nullopt);
+    void AddPackMethod(std::function<void(zmq::message_t&, std::any&)> ser){if(element) element->Serialize = ser;}
+    void AddUnpackMethod(std::function<void(zmq::message_t&, std::any&)> deser){if(element) element->Deserialize = deser;}
 
     EFactory(zmq::context_t& ctx): context{ctx} {type = static_cast<zmq::socket_type>(-1);}
     ~EFactory() = default;
