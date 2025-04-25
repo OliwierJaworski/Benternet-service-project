@@ -36,8 +36,8 @@ struct MainTopic{
     inline string sendtopic()   { return (GetTopic()+">"+GetSession()+"!>");};
     
     static void filter_cb( Bbuffer& forwarded_data );
-    static void UnpackMethod(zmq::message_t &, std::any &);
-    static void PackMethod(zmq::message_t &, std::any &);
+    static void UnpackMethod(zmq::message_t &message, std::any &data);
+    static void PackMethod(zmq::message_t &message, std::any &data);
 
     MainTopic(){info = BTopics::topic_template;}
 };

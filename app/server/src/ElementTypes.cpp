@@ -43,13 +43,13 @@ Sub_Element::process(){
     assert(sink || source || Deserialize); 
 
     if(sink != nullptr){
-        if (socket->recv(sink->GetICEBuffer()->GetzmqData(), zmq::recv_flags::none) == -1)
+        if (socket->recv(sink->GetICEBuffer()->GetzmqData(), zmq::recv_flags::dontwait) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl;
         }
         Deserialize(sink->GetICEBuffer()->GetzmqData(),sink->GetICEBuffer()->GetUdataV());
     }else{
-        if (socket->recv(source->GetICEBuffer()->GetzmqData(), zmq::recv_flags::none) == -1)
+        if (socket->recv(source->GetICEBuffer()->GetzmqData(), zmq::recv_flags::dontwait) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl;
         }
@@ -88,7 +88,7 @@ Filter_Element::process(){
     if(cb_ != nullptr){
         if(sink != nullptr){
             std::cout << "sink is not nullptr so taking its buffer\n";
-            cb_(*source->GetICEBuffer()); //in message = topic
+            cb_(*sink->GetICEBuffer()); //in message = topic
 
         }else{
             std::cout << "source is not nullptr so taking its buffer\n";

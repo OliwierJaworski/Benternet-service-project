@@ -10,11 +10,11 @@ BManager::Run(){
         bool any_running = false;
 
         for (auto& pipeline : pipelines) {
-            std::cout << "traversed pipeline\n";
             if (pipeline->GetStatus()) {
                 pipeline->pollevents();
                 any_running = true;
             }
+            std::cout << "traversed pipeline\n";
         }
 
         if (!any_running) {
@@ -57,29 +57,24 @@ void
 Pipeline_T::pollevents(){
     
     if(status){
-
-        std::cout << "entered eventhandler\n";
+        
         elem_index= elem_index % linkedElems.size(); //keep rotating around the object list
+
         auto& pollitem = linkedElems[elem_index];  
-        std::cout << "event:" << elem_index << "currently being checked\n";
         if(pollitem->eventhandle!=nullptr){ //if its filter /qeue it does not have a socket so nothing to poll
-            std::cout << "found socket checking for event\n";
-            zmq::pollitem_t* item = *pollitem.get()->eventhandle;
-            try{
-                if(zmq::poll(item, 1,std::chrono::milliseconds(-1)) == -1){
-                    std::exception_ptr p = std::current_exception();
-                    std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
-                    exit(1);
-                }
-            }catch(...)
-            {
+          //  std::cout << "found socket checking for event\n";
+            zmq::pollitem_t* item = pollitem->eventhandle->Item();
+            
+            if(zmq::poll(item, 1,std::chrono::milliseconds(-1)) == -1){
                 std::exception_ptr p = std::current_exception();
                 std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
                 exit(1);
             }
-            if(item->revents){
+
+            if(item->revents == item->events){
                 pollitem->process(); //if recv/push etc...
                 elem_index++;
+                item->revents =0;
             }
         }else{
             pollitem->process(); //if filter // qeue etc...

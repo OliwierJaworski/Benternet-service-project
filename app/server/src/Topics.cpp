@@ -7,6 +7,7 @@ BTopics::run(){
     BManager::instance().Run();
     BManager::instance().shutdown();
 }
+
 void 
 BTopics::CreateMainThread(){
     MainTopic TopicData;
@@ -31,9 +32,11 @@ BTopics::CreateMainThread(){
     auto sendReply = Ebuilder.build();
 
     Pbuilder.UserDataType<MainTopic>(TopicData); //keep it as last because TopicData might be needed
-    Pipeline_W pipeline = Pbuilder.build();
-    pipelines.push_back( std::move(pipeline) );
+    Pipeline_W pipeline = Pbuilder.build(); 
 
+    pipeline.SetIsContinous(true);  //runtime not buildtime variable
+    pipelines.push_back( std::move(pipeline) );
+    
     pipeline.ElementLink(
         std::move(RecvStart),
         std::move(processreply),
@@ -59,11 +62,17 @@ MainTopic::filter_cb(Bbuffer& forwarded_data){
 }
 
 void 
-MainTopic::UnpackMethod(zmq::message_t &, std::any &){
+MainTopic::UnpackMethod(zmq::message_t & message, std::any & data){
+    std::cout << data.type().name() << "\n";
+    auto& data_ = std::any_cast<MainTopic&>(data);
+    
+    message.size();
 
 }
 
 void 
-MainTopic::PackMethod(zmq::message_t &, std::any &){
-
+MainTopic::PackMethod(zmq::message_t &message, std::any &data){
+    std::cout << data.type().name() << "\n";
+    auto& data_ = std::any_cast<MainTopic&>(data);
+    message.size();
 }
