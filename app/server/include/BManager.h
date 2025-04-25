@@ -123,8 +123,3 @@ class PFactory{
         zmq::context_t& context;
         std::any buffer;
 };
-
-struct testtype{
-    int data{22};
-    std::string somestring{"hello from custom data structure!"};
-};

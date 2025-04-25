@@ -50,7 +50,7 @@ BTopics::CreateMainThread(){
     
     pipeline.ElementLink(
         std::move(RecvStart),
-        std::move(RecvStart1),
+        //std::move(RecvStart1),
         std::move(processreply2),
         std::move(sendReply)
     );
@@ -92,8 +92,5 @@ MainTopic::PackMethod(zmq::message_t &message, std::any &data){
     std::cout << "[ Sending ] ----[ " << msg_str <<" ]----\n";
 
     auto& data_ = std::any_cast<MainTopic&>(data);
-    const std::string& str = "dnd_session>start!>dd>send code:";
-
-    message.rebuild(str.size());
-    memcpy(message.data(), str.data(), str.size());
+    //const std::string& str = "dnd_session>start!>dd> your code :";
 }

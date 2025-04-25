@@ -13,7 +13,7 @@ struct Bbuffer;
 
 typedef void (*Pollevent_cbF)(Bbuffer& forwarded_data);
 [[noreturn]] void HandleInvalid(std::string&& msg);
-
+void ThrowInvalid(std::string&& msg);
 enum ElemOPT{
     ENDPOINT,
     SOCKCREATE, 
@@ -145,6 +145,9 @@ public:
 protected:
     Element_T(zmq::context_t& ctx): context{ctx}{};
 
+    virtual bool IsBufferEmpty(zmq::message_t& msg) = 0; 
+    virtual void EmptyBuffer(zmq::message_t& msg);
+
     std::unique_ptr<PollItem_T> eventhandle{nullptr};
     Pollevent_cbF cb_{nullptr};
     std::vector<std::string> caps;
@@ -185,6 +188,7 @@ public:
     ~Sub_Element() override {} 
     
     void process() override;
+    bool IsBufferEmpty(zmq::message_t& msg) override {HandleInvalid("[WRONG FUNCTION CALL] Error: don't call if you dont know!");} 
 };
 
 class Push_Element : public Element_T {
@@ -193,6 +197,7 @@ public:
     ~Push_Element() override {} 
     
     void process() override;
+    bool IsBufferEmpty(zmq::message_t& msg) override {return !(msg.size());}
 };
 
 class Filter_Element : public Element_T {
@@ -201,6 +206,7 @@ public:
     ~Filter_Element() override {} 
     
     void process() override;
+    bool IsBufferEmpty(zmq::message_t& msg) override {HandleInvalid("[WRONG FUNCTION CALL] Error: don't call if you dont know!");} 
 };
 
 template<typename argT>

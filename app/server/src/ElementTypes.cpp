@@ -6,6 +6,12 @@ EFactory::build(){
     reset();
     return std::move(tmp);
 }
+void 
+Element_T::EmptyBuffer(zmq::message_t& msg){
+    static const std::string& str = "";
+    msg.rebuild(str.size());
+    memcpy(msg.data(), str.data(), str.size());
+}
 
 void EFactory::CreateElement(Element_type type) {
     switch(type) {
@@ -66,9 +72,14 @@ Push_Element::process(){
     std::string buffer; 
 
     if(sink != nullptr){
+        EmptyBuffer(sink->GetICEBuffer()->GetzmqData()); //prevent feedback
+
         Serialize(sink->GetICEBuffer()->GetzmqData(),sink->GetICEBuffer()->GetUdataV());
         std::cout << static_cast<const char*>(sink->GetICEBuffer()->GetzmqData().data()),
         sink->GetICEBuffer()->GetzmqData().size();
+        
+        if( IsBufferEmpty(sink->GetICEBuffer()->GetzmqData()) )
+            ThrowInvalid("[ZMQ::SEND] Error: sending a value of 0 bytes is illegal.");
 
         if (socket->send(sink->GetICEBuffer()->GetzmqData(),zmq::send_flags::none) == -1)
         {
@@ -76,7 +87,13 @@ Push_Element::process(){
         }
         
     }else{
+        EmptyBuffer(source->GetICEBuffer()->GetzmqData()); //prevent feedback
+
         Serialize(source->GetICEBuffer()->GetzmqData(),source->GetICEBuffer()->GetUdataV());
+
+        if( IsBufferEmpty(source->GetICEBuffer()->GetzmqData()) )
+            ThrowInvalid("[ZMQ::SEND] Error: sending a value of 0 bytes is illegal.");
+
         if (socket->send(source->GetICEBuffer()->GetzmqData(),zmq::send_flags::none) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl; 
@@ -107,4 +124,8 @@ Filter_Element::process(){
     std::cerr << msg <<"\n";
     assert(false);
     std::exit(1);
+}
+
+void ThrowInvalid(std::string&& msg){
+    throw std::runtime_error(msg);
 }
