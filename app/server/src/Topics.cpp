@@ -21,7 +21,7 @@ BTopics::CreateMainThread(){
     auto RecvStart = Ebuilder.build();
 
     Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::sub);
-    Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24042");
+    Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24043");
     Ebuilder.opt(ElemOPT::SOCKOPT, ZMQ_SUBSCRIBE, topic.c_str(), topic.size());
     Ebuilder.AddUnpackMethod(MainTopic::UnpackMethod);
     auto RecvStart1 = Ebuilder.build();
@@ -51,7 +51,8 @@ BTopics::CreateMainThread(){
     pipeline.ElementLink(
         std::move(RecvStart),
         std::move(RecvStart1),
-        std::move(processreply2)
+        std::move(processreply2),
+        std::move(sendReply)
     );
 
     BManager::instance().EnableSingle(pipeline);

@@ -92,11 +92,9 @@ Filter_Element::process(){
     
     if(cb_ != nullptr){
         if(sink != nullptr){
-            std::cout << "sink is not nullptr so taking its buffer\n";
             cb_(*sink->GetICEBuffer()); //in message = topic
 
         }else{
-            std::cout << "source is not nullptr so taking its buffer\n";
             cb_(*source->GetICEBuffer()); //in message = topic
 
         }

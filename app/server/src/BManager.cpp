@@ -63,13 +63,13 @@ Pipeline_T::pollevents(){
         auto& pollitem = linkedElems[elem_index];  
         if(pollitem->eventhandle!=nullptr){ //if its filter /qeue it does not have a socket so nothing to poll
             zmq::pollitem_t* item = pollitem->eventhandle->Item();
-            if(zmq::poll(item, 1,std::chrono::milliseconds(-1)) == -1){
+            if(zmq::poll(item, 1,std::chrono::milliseconds(200)) == -1){
                 std::exception_ptr p = std::current_exception();
                 std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
                 exit(1);
             }
 
-            if (item->revents) {
+            if (item->revents == item->events) {
                 pollitem->process(); //if recv/push etc...
                 elem_index++;
             }
