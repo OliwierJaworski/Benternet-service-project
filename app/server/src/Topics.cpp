@@ -20,10 +20,21 @@ BTopics::CreateMainThread(){
     Ebuilder.AddUnpackMethod(MainTopic::UnpackMethod);
     auto RecvStart = Ebuilder.build();
 
+    Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::sub);
+    Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24042");
+    Ebuilder.opt(ElemOPT::SOCKOPT, ZMQ_SUBSCRIBE, topic.c_str(), topic.size());
+    Ebuilder.AddUnpackMethod(MainTopic::UnpackMethod);
+    auto RecvStart1 = Ebuilder.build();
+
     //Data Filter element
     Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::filter);
     Ebuilder.opt(ElemOPT::SOCK_CB, MainTopic::filter_cb);
     auto processreply = Ebuilder.build();
+
+    //Data Filter element
+    Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::filter);
+    Ebuilder.opt(ElemOPT::SOCK_CB, MainTopic::filter_cb);
+    auto processreply2 = Ebuilder.build();
 
     //Send element
     Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::push);
@@ -39,8 +50,8 @@ BTopics::CreateMainThread(){
     
     pipeline.ElementLink(
         std::move(RecvStart),
-        std::move(processreply),
-        std::move(sendReply)
+        std::move(RecvStart1),
+        std::move(processreply2)
     );
 
     BManager::instance().EnableSingle(pipeline);
@@ -63,7 +74,10 @@ MainTopic::filter_cb(Bbuffer& forwarded_data){
 
 void 
 MainTopic::UnpackMethod(zmq::message_t & message, std::any & data){
-    std::cout << data.type().name() << "\n";
+
+    std::string msg_str(static_cast<char*>(message.data()), message.size());
+    std::cout << "[ received ] ----[ " << msg_str <<" ]----\n";
+
     auto& data_ = std::any_cast<MainTopic&>(data);
     
     message.size();
@@ -72,7 +86,13 @@ MainTopic::UnpackMethod(zmq::message_t & message, std::any & data){
 
 void 
 MainTopic::PackMethod(zmq::message_t &message, std::any &data){
-    std::cout << data.type().name() << "\n";
+
+    std::string msg_str(static_cast<char*>(message.data()), message.size());
+    std::cout << "[ Sending ] ----[ " << msg_str <<" ]----\n";
+
     auto& data_ = std::any_cast<MainTopic&>(data);
-    message.size();
+    const std::string& str = "dnd_session>start!>dd>send code:";
+
+    message.rebuild(str.size());
+    memcpy(message.data(), str.data(), str.size());
 }

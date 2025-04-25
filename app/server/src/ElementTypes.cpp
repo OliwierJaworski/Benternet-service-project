@@ -55,6 +55,7 @@ Sub_Element::process(){
         }
         Deserialize(source->GetICEBuffer()->GetzmqData(),source->GetICEBuffer()->GetUdataV());
     }
+    std::cout << "polled Sub_Element!" << "\n";
 }
 
 void
@@ -66,6 +67,9 @@ Push_Element::process(){
 
     if(sink != nullptr){
         Serialize(sink->GetICEBuffer()->GetzmqData(),sink->GetICEBuffer()->GetUdataV());
+        std::cout << static_cast<const char*>(sink->GetICEBuffer()->GetzmqData().data()),
+        sink->GetICEBuffer()->GetzmqData().size();
+
         if (socket->send(sink->GetICEBuffer()->GetzmqData(),zmq::send_flags::none) == -1)
         {
             std::cout << zmq_strerror(errno) << std::endl;
@@ -78,13 +82,14 @@ Push_Element::process(){
             std::cout << zmq_strerror(errno) << std::endl; 
         }
     }
+    std::cout << "polled Push_Element!" << "\n";
 }
 
 void
 Filter_Element::process(){
 
     assert(sink || source); 
-
+    
     if(cb_ != nullptr){
         if(sink != nullptr){
             std::cout << "sink is not nullptr so taking its buffer\n";
@@ -96,6 +101,7 @@ Filter_Element::process(){
 
         }
     }
+    std::cout << "polled filter!" << "\n";
 }
 
 

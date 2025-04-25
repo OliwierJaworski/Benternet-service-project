@@ -58,27 +58,25 @@ Pipeline_T::pollevents(){
     
     if(status){
         
-        elem_index= elem_index % linkedElems.size(); //keep rotating around the object list
+        elem_index = elem_index % linkedElems.size(); //keep rotating around the object list
 
         auto& pollitem = linkedElems[elem_index];  
         if(pollitem->eventhandle!=nullptr){ //if its filter /qeue it does not have a socket so nothing to poll
-          //  std::cout << "found socket checking for event\n";
             zmq::pollitem_t* item = pollitem->eventhandle->Item();
-            
             if(zmq::poll(item, 1,std::chrono::milliseconds(-1)) == -1){
                 std::exception_ptr p = std::current_exception();
                 std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
                 exit(1);
             }
 
-            if(item->revents == item->events){
+            if (item->revents) {
                 pollitem->process(); //if recv/push etc...
                 elem_index++;
-                item->revents =0;
             }
+
         }else{
-            pollitem->process(); //if filter // qeue etc...
-            elem_index++;
+           pollitem->process(); //if filter // qeue etc...
+           elem_index++;
         }
 
     }
