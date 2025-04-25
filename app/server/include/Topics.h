@@ -1,3 +1,5 @@
+#pragma once
+
 #include <openai.hpp>
 #include <BManager.h>
 #include <zmq.hpp>
