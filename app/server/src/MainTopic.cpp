@@ -4,22 +4,28 @@ namespace Benternet{
 json MainTopic_info = {
     { "benternet", {
         { "service", {
-            { "topic",   "dnd_session" },
+            { "prefix", "dnd_session>start" },
+            { "topic", "dnd_session" },
             { "session", "start" },
             { "message", "" },
-            { "delim",   ">" },
-            { "id", "service_001" },
+            { "delim", ">" },
+           // { "id", "service_001" },
             { "status", "active" },
-            { "last_heartbeat", "2025-04-25T12:34:56Z" } // Initial timestamp
+            { "last_heartbeat", "" }
         }},
         { "commands", {
-            { "help",   "" },
+            { "help", "[ CORRECT USAGE: ], topic>session>!**command** : for commands: !commands" },
+            { "time", "" },
             { "play!", "" },
             { "message", "" },
-            { "delim",   ">" },
+            { "delim", ">" },
+            { "ActiveUsers", 0 },
+            { "Sessions", json::array({
+                { {"sessionID", ""}, {"Players", json::array({""})} }
+            }) },
             { "id", "service_001" },
             { "status", "active" },
-            { "last_heartbeat", "2025-04-25T12:34:56Z" } // Initial timestamp
+            { "last_heartbeat", "" }
         }},
         { "configuration", {
             { "max_connections", 100 },
@@ -96,38 +102,68 @@ BTopics::CreateMainThread(){
 
 void 
 MainTopic::filter_cb(Bbuffer& forwarded_data){
+    
     std::cout << "hello from callback!\n";
 
     std::cout << forwarded_data.GetUdataV().type().name() << "\n";
-    auto data = std::any_cast<MainTopic>(forwarded_data.GetUdataV());
-
-   /*zmq::message_t datazmq = forwarded_data.GetzmqData();
-    std::string tmp = BMessage::ToAnswer(datazmq);
-    tmp += "your code is:";
-    forwarded_data.rebuild(tmp.size());
-    memcpy(forwarded_data.data(), tmp.data(), tmp.size());*/ 
+    auto data_ = std::any_cast<MainTopic>(forwarded_data.GetUdataV());
+    if(data_.err){
+        return;
+    }
+        
 
 }
+
 
 void 
 MainTopic::UnpackMethod(zmq::message_t & message, std::any & data){
 
     std::string msg_str(static_cast<char*>(message.data()), message.size());
     std::cout << "[ received ] ----[ " << msg_str <<" ]----\n";
-
     auto& data_ = std::any_cast<MainTopic&>(data);
-    
-    message.size();
+    try{
+        data_.SetServiceFields(msg_str);
+        
+        if(data_.pick_option(data_.GetFromString("MESSAGE",msg_str),data_.info) == "**INVALID**")
+            throw std::runtime_error("GetFromString: Invalid key or insufficient parts");
 
+    }catch(const std::runtime_error& err){
+        data_.err=1;
+        std::string err_str = err.what();
+        if(err_str == "GetFromString: Invalid key or insufficient parts"){
+            data_.Processed_Data = data_.GetFromString("PREFIX",msg_str)+"!>" + "[ Not supported content ] :: " + data_.GetHelp();
+            std::cout << data_.Processed_Data << std::endl;
+            return;
+        }
+    }
+    message.size();
+}
+
+string 
+MainTopic::pick_option(const string& optionstring, json& info_){
+    if (optionstring.empty() || optionstring[0] != '!') {
+        return "**INVALID**";
+    }
+
+    std::string command = optionstring.substr(1); // remove '!'
+
+    for (auto& [key, val] : info_["benternet"]["service"].items()) {
+        if (key == command) {
+            return command;
+        }
+    }
+
+    return "**INVALID**";
 }
 
 void 
 MainTopic::PackMethod(zmq::message_t &message, std::any &data){
+    auto& data_ = std::any_cast<MainTopic&>(data);
+
+    message.rebuild(data_.Processed_Data.size());
+    memcpy(message.data(), data_.Processed_Data.c_str(), data_.Processed_Data.size());
 
     std::string msg_str(static_cast<char*>(message.data()), message.size());
     std::cout << "[ Sending ] ----[ " << msg_str <<" ]----\n";
-
-    auto& data_ = std::any_cast<MainTopic&>(data);
-    //const std::string& str = "dnd_session>start!>dd> your code :";
 }
 };
