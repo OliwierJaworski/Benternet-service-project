@@ -1,5 +1,49 @@
 #include <Topics.h>
-using namespace Benternet;
+namespace Benternet{
+
+json MainTopic_info = {
+    { "benternet", {
+        { "service", {
+            { "topic",   "dnd_session" },
+            { "session", "start" },
+            { "message", "" },
+            { "delim",   ">" },
+            { "id", "service_001" },
+            { "status", "active" },
+            { "last_heartbeat", "2025-04-25T12:34:56Z" } // Initial timestamp
+        }},
+        { "commands", {
+            { "help",   "" },
+            { "play!", "" },
+            { "message", "" },
+            { "delim",   ">" },
+            { "id", "service_001" },
+            { "status", "active" },
+            { "last_heartbeat", "2025-04-25T12:34:56Z" } // Initial timestamp
+        }},
+        { "configuration", {
+            { "max_connections", 100 },
+            { "timeout", 5000 },
+            { "auto_restart", true },
+            { "logging_enabled", true },
+            { "log_level", "INFO" }
+        }},
+        { "monitoring", {
+            { "uptime", "" },
+            { "error_count", 0 },
+            { "request_count", 0 },
+            { "health_check_interval", 60 }
+        }},
+        { "dependencies", {
+            { "**NOVALUE**", {
+                { "topic", "" },
+                { "session", "" },
+                { "argument", "" },
+                { "Vartype", "" }
+            }}
+        }}
+    }}
+};
 
 void 
 BTopics::CreateMainThread(){
@@ -43,7 +87,6 @@ BTopics::CreateMainThread(){
     
     pipeline.ElementLink(
         std::move(RecvStart),
-        //std::move(RecvStart1),
         std::move(processreply2),
         std::move(sendReply)
     );
@@ -87,3 +130,4 @@ MainTopic::PackMethod(zmq::message_t &message, std::any &data){
     auto& data_ = std::any_cast<MainTopic&>(data);
     //const std::string& str = "dnd_session>start!>dd> your code :";
 }
+};

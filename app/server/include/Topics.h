@@ -4,6 +4,7 @@
 #include <BManager.h>
 #include <zmq.hpp>
 #include <nlohmann/json.hpp>
+#include <chrono>
 
 namespace Benternet{
 
@@ -12,36 +13,53 @@ using string = std::string;
 template<typename T>
 using vector = std::vector<T>;
 
+extern json MainTopic_info;
+
+struct Topic_template{
+    inline static json info;
+    void PrintJson() { std::cout << info.dump(4) << std::endl;}
+
+    inline string GetTopic()    { return info["benternet"]["service"]["topic"].get<string>(); }
+    inline string GetSession()  { return info["benternet"]["service"]["session"].get<string>(); };
+    inline string GetMessage()  { return info["benternet"]["service"]["message"].get<string>(); };
+    inline string GetDelim()    { return info["benternet"]["service"]["delim"].get<string>(); };
+    inline string GetServiceStatus() { return info["benternet"]["service"]["status"].get<string>(); }
+    inline string GetLastHeartbeat() { return info["benternet"]["service"]["last_heartbeat"].get<string>(); }
+    inline int GetMaxConnections() { return info["benternet"]["configuration"]["max_connections"].get<int>(); }
+
+    inline void SetTopic(const string& topic) { info["benternet"]["service"]["topic"] = topic; }
+    inline void SetSession(const string& session) { info["benternet"]["service"]["session"] = session; }
+    inline void SetMessage(const string& message) { info["benternet"]["service"]["message"] = message; }
+    inline void SetDelim(const string& delim) { info["benternet"]["service"]["delim"] = delim;}
+    inline void SetServiceStatus(const string& status) { info["benternet"]["service"]["status"] = status; }
+    inline void SetLastHeartbeat(const string& timestamp) { info["benternet"]["service"]["last_heartbeat"] = timestamp; }
+    
+    inline string recvtopic()   { return (GetTopic()+">"+GetSession()+"?>");};
+    inline string sendtopic()   { return (GetTopic()+">"+GetSession()+"!>");};
+    
+    Topic_template(json& info_){info = info_;}
+};
+
 class BTopics{
 public:
-    inline static const json topic_template{{"topic", "dnd_session"}, {"session", "start"}, {"message",""}, {"delim", ">"}};
-
     void run();
 
     BTopics(){}
     ~BTopics(){}
 private:
+
     void CreateMainThread();
     EFactory Ebuilder { *BManager::context() };
     PFactory Pbuilder { *BManager::context() };
     vector<Pipeline_W> pipelines;
 };
 
-struct MainTopic{
-    json info;
-    inline string GetTopic()    { return info["topic"].get<string>(); }
-    inline string GetSession()  { return info["session"].get<string>(); };
-    inline string GetMessage()  { return info["message"].get<string>(); };
-    inline string GetDelim()    { return info["delim"].get<string>(); };
-
-    inline string recvtopic()   { return (GetTopic()+">"+GetSession()+"?>");};
-    inline string sendtopic()   { return (GetTopic()+">"+GetSession()+"!>");};
-    
+struct MainTopic : Topic_template{
     static void filter_cb( Bbuffer& forwarded_data );
     static void UnpackMethod(zmq::message_t &message, std::any &data);
     static void PackMethod(zmq::message_t &message, std::any &data);
-
-    MainTopic(){info = BTopics::topic_template;}
+    
+    MainTopic() : Topic_template(MainTopic_info){} 
 };
 
 };
