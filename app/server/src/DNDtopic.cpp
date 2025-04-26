@@ -42,10 +42,12 @@ DndTopic::Process( Bbuffer& forwarded_data ){
             "model": "mn-violet-lotus-12b",
             "messages":[{"role":"user", "content":" "}],
             "max_tokens": 2000,
-            "temperature": 0
+            "temperature": 0,
+            "session_id": ""
         }
         )"_json;
     uquery["messages"].push_back({{"role","user"},{"content",data_.Processed_Data}});
+    uquery["session_id"] = data_.GetID();
     auto chat = openai::chat().create(uquery);
     data_.Processed_Data = chat["choices"][0]["message"]["content"].dump();
 }
