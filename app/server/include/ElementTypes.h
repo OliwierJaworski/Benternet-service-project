@@ -13,7 +13,7 @@ struct Bbuffer;
 
 typedef void (*Pollevent_cbF)(Bbuffer& forwarded_data);
 [[noreturn]] void HandleInvalid(std::string&& msg);
-
+void ThrowInvalid(std::string&& msg);
 enum ElemOPT{
     ENDPOINT,
     SOCKCREATE, 
@@ -82,7 +82,6 @@ public:
         }
     }    
 
-    
     Bbuffer() = default;
     ~Bbuffer() =default;
 private:
@@ -99,7 +98,8 @@ private:
  * @example - provide datatype to store image, text or audio data which will be used in the pipeline
  */
 struct PollItem_T{
-    operator zmq::pollitem_t*() {return &item;}; 
+    zmq::pollitem_t* Item(){return &item;}
+    //operator zmq::pollitem_t*() {return &item;};  //-> does not work
     PollItem_T(void* socket_, short eventtype_, Element_T& elem) : item{ .socket= socket_, .fd=-1, .events = eventtype_, .revents=0},
                                                                                                                      element{elem}{}
 private:
@@ -144,6 +144,9 @@ public:
 protected:
     Element_T(zmq::context_t& ctx): context{ctx}{};
 
+    virtual bool IsBufferEmpty(zmq::message_t& msg) = 0; 
+    virtual void EmptyBuffer(zmq::message_t& msg);
+
     std::unique_ptr<PollItem_T> eventhandle{nullptr};
     Pollevent_cbF cb_{nullptr};
     std::vector<std::string> caps;
@@ -184,6 +187,7 @@ public:
     ~Sub_Element() override {} 
     
     void process() override;
+    bool IsBufferEmpty(zmq::message_t& msg) override {HandleInvalid("[WRONG FUNCTION CALL] Error: don't call if you dont know!");} 
 };
 
 class Push_Element : public Element_T {
@@ -192,6 +196,7 @@ public:
     ~Push_Element() override {} 
     
     void process() override;
+    bool IsBufferEmpty(zmq::message_t& msg) override {return !(msg.size());}
 };
 
 class Filter_Element : public Element_T {
@@ -200,6 +205,7 @@ public:
     ~Filter_Element() override {} 
     
     void process() override;
+    bool IsBufferEmpty(zmq::message_t& msg) override {HandleInvalid("[WRONG FUNCTION CALL] Error: don't call if you dont know!");} 
 };
 
 template<typename argT>

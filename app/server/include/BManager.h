@@ -29,9 +29,9 @@ public:
 private:
 
     template<typename UType>
-    static std::shared_ptr<Pipeline_T> create(zmq::context_t& ctx, UType& data) {std::cout<< "\n usertype2:"<< data.type().name()<< "\n"; return std::shared_ptr<Pipeline_T>(new Pipeline_T(ctx, std::move(data)));}
+    static std::shared_ptr<Pipeline_T> create(zmq::context_t& ctx, UType& data) { return std::shared_ptr<Pipeline_T>(new Pipeline_T(ctx, std::move(data)));}
     template<typename UType>
-    Pipeline_T(zmq::context_t& context_, UType data_): context{context_}{std::cout<< "\n usertype3:"<< data_.type().name()<< "\n"; if(!buffer) buffer = std::make_shared<Bbuffer>(); buffer->SetUdata(data_); }
+    Pipeline_T(zmq::context_t& context_, UType data_): context{context_}{ if(!buffer) buffer = std::make_shared<Bbuffer>(); buffer->SetUdata(data_); }
     
     bool status{false}; // offline| not running
     bool IsContinous{false}; //whether its oneshot or not
@@ -96,6 +96,10 @@ class Pipeline_W{
 public:
     template<typename... Ptrs>
     inline int ElementLink(std::unique_ptr<Element_T>&& first, Ptrs&&... rest) { return pipeline->ElementLink(std::move(first), std::forward<Ptrs>(rest)...);}
+    inline void SetStatus(bool status_)     { pipeline->SetStatus(status_); }
+    inline bool GetStatus()                 { return pipeline->GetStatus(); }// eg. running or not 
+    inline void SetIsContinous(bool status_){ pipeline->SetIsContinous(status_); }
+    inline bool GetIsContinous()            { return pipeline->GetIsContinous(); }
 
     operator std::shared_ptr<Pipeline_T>& () {return pipeline;} 
 
@@ -109,7 +113,7 @@ class PFactory{
     public:
         Pipeline_W build();
         template <typename Utype>
-        inline void UserDataType(){buffer = std::make_any<Utype>(Utype{}); std::cout<< "\n usertype:"<< buffer.type().name()<< "\n"; } //if user type needs default values this does not work
+        inline void UserDataType(Utype& data){buffer = std::make_any<Utype>(std::move(data));} //if user type needs default values this does not work
 
         PFactory(zmq::context_t& ctx): context{ctx} {}
         ~PFactory() = default;
@@ -118,9 +122,4 @@ class PFactory{
         void reset();
         zmq::context_t& context;
         std::any buffer;
-};
-
-struct testtype{
-    int data{22};
-    std::string somestring{"hello from custom data structure!"};
 };
