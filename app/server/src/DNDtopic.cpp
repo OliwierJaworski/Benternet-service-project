@@ -34,18 +34,33 @@ json DNDtopic_info = {
 
 void 
 DndTopic::Process( Bbuffer& forwarded_data ){
-
+    std::string chatresponse="";
+    auto& data_ = std::any_cast<DndTopic&>(forwarded_data.GetUdataV());
+    ;
+    json uquery = R"(
+        {
+            "model": "mn-violet-lotus-12b",
+            "messages":[{"role":"user", "content":" "}],
+            "max_tokens": 2000,
+            "temperature": 0
+        }
+        )"_json;
+    uquery["messages"].push_back({{"role","user"},{"content",data_.Processed_Data}});
+    auto chat = openai::chat().create(uquery);
+    data_.Processed_Data = chat["choices"][0]["message"]["content"].dump();
 }
 void 
 DndTopic::UnpackMethod(zmq::message_t &message, std::any &data){
-
+    std::string msg_str(static_cast<char*>(message.data()), message.size());
+    auto& data_ = std::any_cast<DndTopic&>(data);
+    
+    data_.Processed_Data = data_.GetFromString("MESSAGE",msg_str);
 }
 void 
 DndTopic::PackMethod(zmq::message_t &message, std::any &data){
     auto& data_ = std::any_cast<DndTopic&>(data);
-    string send = data_.GetTopic() + ">" + data_.GetSession() + "!>" + data_.GetID() + ">" + "welcome to your dungeon! respond with !play to start";
-    data_.Processed_Data = send;
-    message.rebuild(data_.Processed_Data.size());
-    memcpy(message.data(), data_.Processed_Data.c_str(), data_.Processed_Data.size());
+    string send = data_.GetTopic() + ">" + data_.GetSession() + "!>" + data_.GetID() + ">" + data_.Processed_Data;
+    message.rebuild(send.size());
+    memcpy(message.data(), send.c_str(), send.size());
 }
 };
