@@ -15,18 +15,18 @@ json MainTopic_info = {
             { "last_heartbeat", "" }
         }},
         { "commands", {
-            { "about", "Service for creationg/joining user made lobbies. to play DND with a AI dungeon master"},
-            { "help", "[ CORRECT USAGE: ], topic>session>!**command** : for commands: !commands" },
-            { "time", "**FUNCTYPE**"},
-            { "play!", "**FUNCTYPE**" },
-            { "delim", ">" }, //wont be allowed yet to change delim
-            { "ActiveUsers", 0 },
-            { "Sessions", json::array({
+            { "!about", "Service for creationg/joining user made lobbies. to play DND with a AI dungeon master"},
+            { "!help", "[ CORRECT USAGE: ], topic>session>!**command** : for commands: !commands" },
+            { "!time", "**FUNCTYPE**"},
+            { "!play!", "**FUNCTYPE**" },
+            { "!delim", ">" }, //wont be allowed yet to change delim
+            { "!ActiveUsers", 0 },
+            { "!Sessions", json::array({
                 { {"sessionID", ""}, {"Players", json::array({""})} }
             }) },
-            { "id", "DND-lobby" },
-            { "status", "active" },
-            { "last_heartbeat", "" }
+            { "!id", "DND-lobby" },
+            { "!status", "active" },
+            { "!last_heartbeat", "**FUNCTYPE**" }
         }},
         { "configuration", {
             { "max_connections", 100 },
@@ -102,20 +102,6 @@ BTopics::CreateMainThread(){
 }
 
 void 
-MainTopic::filter_cb(Bbuffer& forwarded_data){
-    
-    std::cout << "hello from callback!\n";
-
-    std::cout << forwarded_data.GetUdataV().type().name() << "\n";
-    auto data_ = std::any_cast<MainTopic>(forwarded_data.GetUdataV());
-    if(data_.err){
-        return;
-    }
-    data_.ExecCommand(data_.Processed_Data);
-}
-
-
-void 
 MainTopic::UnpackMethod(zmq::message_t & message, std::any & data){
 
     std::string msg_str(static_cast<char*>(message.data()), message.size());
@@ -152,27 +138,39 @@ MainTopic::UnpackMethod(zmq::message_t & message, std::any & data){
     message.size();
 }
 
-string 
-MainTopic::pick_option(const string& optionstring, json& info_){
-    if (optionstring.empty() || optionstring[0] != '!') {
-        throw std::runtime_error("[VARVALUE] Invalid message appended");
+void 
+MainTopic::filter_cb(Bbuffer& forwarded_data){
+    
+    std::cout << "hello from callback!\n";
+
+    std::cout << forwarded_data.GetUdataV().type().name() << "\n";
+    auto data_ = std::any_cast<MainTopic>(forwarded_data.GetUdataV());
+    if(data_.err){
+        return;
     }
-
-    std::string command = optionstring.substr(1); // remove '!'
-
-    for (auto& [key, val] : info_["benternet"]["commands"].items()) {
-        if (key == command) {
-            return command;
-        }
-    }
-
-    throw std::runtime_error("[VARVALUE] Invalid message appended"); //command not supported 
+    //!!!!!!!!try catch for: [json.exception.type_error.302] type must be string, but is null
+    data_.ExecCommand(data_.Processed_Data);
 }
 
 void 
 MainTopic::PackMethod(zmq::message_t &message, std::any &data){
     auto& data_ = std::any_cast<MainTopic&>(data);
 
+    //if wrong argument was provided
+    if(data_.err){
+        message.rebuild(data_.Processed_Data.size());
+        memcpy(message.data(), data_.Processed_Data.c_str(), data_.Processed_Data.size());
+        return;
+    }
+
+    string forwarded = data_.Processed_Data;
+    std::cout << "forwarded: "<<forwarded << "\n";
+
+    data_.Processed_Data =  data_.GetTopic() + data_.GetDelim() + 
+                                        data_.GetSession() + data_.GetDelim() +
+                                        data_.GetID() + data_.GetDelim() +
+                                        forwarded;
+                                        
     message.rebuild(data_.Processed_Data.size());
     memcpy(message.data(), data_.Processed_Data.c_str(), data_.Processed_Data.size());
 
@@ -180,26 +178,35 @@ MainTopic::PackMethod(zmq::message_t &message, std::any &data){
     std::cout << "[ Sending ] ----[ " << msg_str <<" ]----\n";
 }
 
+string 
+MainTopic::pick_option(const string& optionstring, json& info_){
+    if (optionstring.empty() || optionstring[0] != '!') {
+        throw std::runtime_error("[VARVALUE] Invalid message appended");
+    }
+
+    for (auto& [key, val] : info_["benternet"]["commands"].items()) {
+        if (key == optionstring) {
+            return optionstring;
+        }
+    }
+
+    throw std::runtime_error("[VARVALUE] Invalid message appended"); //command not supported 
+}
+
 void
 MainTopic::ExecCommand(std::string& command){
    string value =info["benternet"]["commands"][command].get<std::string>();
-
+   
    if(value.find("**FUNCTYPE**") != string::npos){
         command_table[command](*this);
    }else{
         Processed_Data = value;
    }
 }
-void 
-MainTopic::CT_time(MainTopic& data){
 
-}
 void 
 MainTopic::CT_play(MainTopic& data){
-
-}
-void MainTopic::CT_last_heartbeat(MainTopic& data){
-
+ //big big hassle :(
 }
 
 };

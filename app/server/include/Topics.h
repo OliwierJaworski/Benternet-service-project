@@ -46,7 +46,7 @@ struct Topic_template{
     inline string GetServiceStatus()noexcept { return info["benternet"]["service"]["status"].get<string>(); }
     inline string GetLastHeartbeat()noexcept { return info["benternet"]["service"]["last_heartbeat"].get<string>(); }
     inline int GetMaxConnections()noexcept { return info["benternet"]["configuration"]["max_connections"].get<int>(); }
-    inline string GetHelp()noexcept { return info["benternet"]["commands"]["help"].get<string>(); }
+    inline string GetHelp()noexcept { return info["benternet"]["commands"]["!help"].get<string>(); }
 
     inline void SetTopic(const string& topic) { info["benternet"]["service"]["topic"] = topic; }
     inline void SetSession(const string& session) { info["benternet"]["service"]["session"] = session; }
@@ -83,9 +83,9 @@ struct MainTopic : Topic_template{
     static void UnpackMethod(zmq::message_t &message, std::any &data);
     static void PackMethod(zmq::message_t &message, std::any &data);
     
-    static void CT_time(MainTopic& data);
+    static void CT_time(MainTopic& data){ data.Processed_Data = data.GetCurrentTimestamp(); }
     static void CT_play(MainTopic& data);
-    static void CT_last_heartbeat(MainTopic& data);
+    static void CT_last_heartbeat(MainTopic& data){ data.Processed_Data = data.GetLastHeartbeat(); }
 
     void ExecCommand(std::string& command);
     string pick_option(const string& optionstring, json& info_);
@@ -93,9 +93,9 @@ struct MainTopic : Topic_template{
     MainTopic() : Topic_template(MainTopic_info){} 
 
     std::unordered_map<std::string, std::function<void(MainTopic& data)>> command_table{
-        {"time", CT_time},
-        {"play", CT_play},
-        {"last_heartbeat", CT_last_heartbeat}
+        {"!time", CT_time},
+        {"!play", CT_play},
+        {"!last_heartbeat", CT_last_heartbeat}
     };
 };
 
