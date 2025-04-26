@@ -15,18 +15,30 @@ json MainTopic_info = {
             { "last_heartbeat", "" }
         }},
         { "commands", {
-            { "!DontUseFirstEntry!", "Service for creating/joining user made lobbies. to play DND with a AI dungeon master" },
-            { "!about", "hello from about!" },
-            { "!help", "[ CORRECT USAGE: ], topic>session>!**command** : for commands: !commands" },
-            { "!time", "**FUNCTYPE**"},
+            { "!DontUseFirstEntry!", "" },
+            { "!commands", 
+                "\n\033[1;34m!about\033[0m: \033[1;32mservice info.\033[0m\n"
+                "\033[1;34m!help\033[0m: \033[1;32mUsage help and syntax guide.\033[0m\n"
+                "\033[1;34m!play\033[0m: \033[1;32mStarts a new DND session.\033[0m\n"
+                "\033[1;34m!time\033[0m: \033[1;32mReturns the current server time.\033[0m\n"
+                "\033[1;34m!delim\033[0m: \033[1;32mShows the current delimiter.\033[0m\n"
+                "\033[1;34m!ActiveUsers\033[0m: \033[1;32mShows the number of currently active users.\033[0m\n"
+                "\033[1;34m!Sessions\033[0m: \033[1;32mLists current sessions and players.\033[0m\n"
+                "\033[1;34m!id\033[0m: \033[1;32mDisplays the service ID.\033[0m\n"
+                "\033[1;34m!status\033[0m: \033[1;32mDisplays the current service status.\033[0m\n"
+                "\033[1;34m!last_heartbeat\033[0m: \033[1;32mShows the last heartbeat timestamp (Function type).\033[0m\n"
+            },
+            { "!about", "\n\033[1;34mService for creating/joining user made lobbies. to play DND with an AI dungeon master\033[0m" },
+            { "!help", "\n\\033[1;34m[ CORRECT USAGE: ], topic>session>!**command** : for commands: !commands\033[0m" },
+            { "!time", "**FUNCTYPE**" },
             { "!play!", "**FUNCTYPE**" },
-            { "!delim", ">" }, //wont be allowed yet to change delim
+            { "!delim", "\n\\033[1;34m>\033[0m" }, // won't be allowed yet to change delim
             { "!ActiveUsers", 0 },
             { "!Sessions", json::array({
                 { {"sessionID", ""}, {"Players", json::array({""})} }
             }) },
-            { "!id", "DND-lobby" },
-            { "!status", "active" },
+            { "!id", "\n\033[1;34mDND-lobby\033[0m" },
+            { "!status", "\n\\033[1;34mactive\033[0m" },
             { "!last_heartbeat", "**FUNCTYPE**" }
         }},
         { "configuration", {
@@ -100,6 +112,11 @@ BTopics::CreateMainThread(){
     );
 
     BManager::instance().EnableSingle(pipeline);
+}
+
+void
+MainTopic::CreateDNDSession(){
+   
 }
 
 void 

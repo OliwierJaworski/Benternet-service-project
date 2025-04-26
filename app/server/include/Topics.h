@@ -19,6 +19,7 @@ using vector = std::vector<T>;
 
 extern json MainTopic_info;
 
+
 struct Topic_template{
     enum MPART{
         TOPIC,
@@ -73,6 +74,7 @@ public:
 private:
 
     void CreateMainThread();
+
     EFactory Ebuilder { *BManager::context() };
     PFactory Pbuilder { *BManager::context() };
     vector<Pipeline_W> pipelines;
@@ -88,6 +90,8 @@ struct MainTopic : Topic_template{
     static void CT_last_heartbeat(MainTopic& data){ data.Processed_Data = data.GetLastHeartbeat(); }
 
     void ExecCommand(std::string& command);
+    void CreateDNDSession();
+
     string pick_option(const string& optionstring, json& info_);
 
     MainTopic() : Topic_template(MainTopic_info){} 
@@ -99,6 +103,12 @@ struct MainTopic : Topic_template{
     };
 };
 
+struct DndTopic : Topic_template{
+    
+
+};
+
 using MPART = Topic_template::MPART;
 
 };
+
