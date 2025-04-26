@@ -101,7 +101,7 @@ struct MainTopic : Topic_template{
 
     std::unordered_map<std::string, std::function<void(MainTopic& data)>> command_table{
         {"!time", CT_time},
-        {"!play", CT_play},
+        {"!play!", CT_play},
         {"!last_heartbeat", CT_last_heartbeat}
     };
 };

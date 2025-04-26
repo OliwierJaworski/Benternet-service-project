@@ -43,7 +43,8 @@ DndTopic::UnpackMethod(zmq::message_t &message, std::any &data){
 void 
 DndTopic::PackMethod(zmq::message_t &message, std::any &data){
     auto& data_ = std::any_cast<DndTopic&>(data);
-    string send = data_.GetTopic() + ">" + data_.GetSession()  + ">" + data_.GetID() + ">" + "welcome to your dungeon! respond with !play to start";
+    string send = data_.GetTopic() + ">" + data_.GetSession() + "!>" + data_.GetID() + ">" + "welcome to your dungeon! respond with !play to start";
+    data_.Processed_Data = send;
     message.rebuild(data_.Processed_Data.size());
     memcpy(message.data(), data_.Processed_Data.c_str(), data_.Processed_Data.size());
 }
