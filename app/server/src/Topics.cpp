@@ -20,8 +20,8 @@ Topic_template::GetCurrentTimestamp() {
     timestamp_stream << std::put_time(&now_tm, "%dT-%m-%Y%H:%M:%SZ");
     return timestamp_stream.str();
 }
-string 
-Topic_template::GetFromString(const std::string& key, const std::string& haystack) {
+
+std::string Topic_template::GetFromString(const std::string& key, const std::string& haystack) {
     std::vector<std::string> parts;
     std::stringstream ss(haystack);
     std::string part;
@@ -40,7 +40,7 @@ Topic_template::GetFromString(const std::string& key, const std::string& haystac
         if (parts.size() > 1) {
             std::string session = parts[1];
             trim_suffix(session);
-            return (parts[0] + ">" + session );
+            return parts[0] + ">" + session + "!" + ">" + parts[2];
         } else {
             throw std::runtime_error("GetFromString: not enough prefix arguments");
         }
@@ -49,34 +49,30 @@ Topic_template::GetFromString(const std::string& key, const std::string& haystac
         if (parts.size() > 1) {
             std::string session = parts[1];
             trim_suffix(session);
-            std::cout << "Session: " << session << std::endl;
             return session;
         } else {
-            throw std::runtime_error("GetFromString: not enough prefix arguments");
+            throw std::runtime_error("GetFromString: not enough session parts");
         }
     }
-    else if (key == "TOPIC") {
-        if (!parts.empty()) {
-            return parts[0];
-        } else {
-            throw std::runtime_error("GetFromString: not enough prefix arguments");
-        }
-    }
-    else if (key == "MESSAGE") {
+    else if (key == "NAME") {
         if (parts.size() > 2) {
             return parts[2];
         } else {
-            throw std::runtime_error("GetFromString: Invalid key or insufficient parts");
+            throw std::runtime_error("GetFromString: NAME not found in message");
         }
     }
-    else {
-        throw std::runtime_error("GetFromString: Invalid key or insufficient parts");
+    else if (key == "MESSAGE") {
+        if (parts.size() > 3) {
+            return parts[3];
+        } else {
+            throw std::runtime_error("GetFromString: MESSAGE not found in message");
+        }
     }
+    throw std::runtime_error("GetFromString: Invalid key");
 }
 
 
 void Topic_template::SetServiceFields(std::string input) {
-
     std::vector<std::string> parts;
     std::stringstream ss(input);
     std::string part;
@@ -84,45 +80,39 @@ void Topic_template::SetServiceFields(std::string input) {
         parts.push_back(part);
     }
 
-    // Check the number of parts in input and set the fields accordingly
-    
-    // Set the "prefix" field: Uses topic and session if available
-    if (parts.size() >= 2) {
-        std::string prefix = GetFromString("PREFIX", parts[0] + ">" + parts[1]);
-        info["benternet"]["service"]["prefix"] = prefix;
-    } else {
-        throw std::runtime_error("SetServiceFields: Invalid service prefix");
+    if (parts.size() < 4) {
+        throw std::runtime_error("SetServiceFields: Invalid input structure (need topic>session?>name>message)");
     }
 
-    // Set the "topic" field: Use the first part of input or default if not present
-    if (parts.size() > 0) {
-        SetTopic(parts[0]);  // Setting topic from input
+    // Set prefix: topic>session
+    std::string prefix = GetFromString("PREFIX", parts[0] + ">" + parts[1]);
+    info["benternet"]["service"]["prefix"] = prefix;
+
+    // Topic
+    SetTopic(parts[0]);
+
+    // Session: session?>name
+    std::string session = parts[1] + ">" + parts[2];
+    SetSession(session);
+
+    // Name (user sending the message)
+    SetSenderName(parts[3]);
+
+    // Message
+    if (parts.size() > 4) {
+        SetMessage(parts[4]);
     } else {
-        throw std::runtime_error("SetServiceFields: Invalid service prefix");
+        info["benternet"]["service"]["message"] = "**NOVALUE**";
     }
 
-    // Set the "session" field: Use the second part of input or default if not present
-    if (parts.size() > 1) {
-        SetSession(parts[1]);  // Setting session from input
-    } else {
-        throw std::runtime_error("SetServiceFields: Invalid service prefix");
-    }
-
-    // Set the "message" field: Use the third part of input or default if not present
-    if (parts.size() > 2) {
-        SetMessage(parts[2]);  // Setting message from input
-    } else {
-        throw std::runtime_error("GetFromString: Invalid key or insufficient parts");
-    }
-
-    // Set the "status" field: Defaults to "**NOVALUE**" if missing
+    // Service status
     if (info["benternet"]["service"].contains("status")) {
         SetServiceStatus(info["benternet"]["service"]["status"].get<std::string>());
     } else {
         info["benternet"]["service"]["status"] = "**active**";
     }
 
-    // Set the "last_heartbeat" field: Updates the timestamp if not found
+    // Heartbeat
     if (info["benternet"]["service"].contains("last_heartbeat")) {
         SetLastHeartbeat();
     } else {

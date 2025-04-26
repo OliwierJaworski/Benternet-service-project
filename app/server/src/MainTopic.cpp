@@ -9,6 +9,7 @@ json MainTopic_info = {
             { "session", "start" },
             { "message", "" },
             { "delim", ">" },
+            { "name", ""},
            // { "id", "service_001" },
             { "status", "active" },
             { "last_heartbeat", "" }
@@ -131,7 +132,7 @@ MainTopic::UnpackMethod(zmq::message_t & message, std::any & data){
         data_.err=1;
         std::string err_str = err.what();
         if(err_str == "GetFromString: Invalid key or insufficient parts"){
-            data_.Processed_Data = data_.GetFromString("PREFIX",msg_str)+"!>" + "[ Not supported content ] :: " + data_.GetHelp();
+            data_.Processed_Data = data_.GetFromString("PREFIX",msg_str)+">" + "[ Not supported content ] :: " + data_.GetHelp();
             std::cout << data_.Processed_Data << std::endl;
             return;
         }

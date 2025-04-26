@@ -24,7 +24,7 @@ struct Topic_template{
     string GetCurrentTimestamp();
     string GetFromString(const std::string& key, const std::string& haystack);
     void SetServiceFields(std::string input);
-
+    
     inline string GetTopic()    { return info["benternet"]["service"]["topic"].get<string>(); }
     inline string GetSession()  { return info["benternet"]["service"]["session"].get<string>(); };
     inline string GetMessage()  { return info["benternet"]["service"]["message"].get<string>(); };
@@ -40,7 +40,8 @@ struct Topic_template{
     inline void SetDelim(const string& delim) { info["benternet"]["service"]["delim"] = delim;}
     inline void SetServiceStatus(const string& status) { info["benternet"]["service"]["status"] = status; }
     inline void SetLastHeartbeat() { info["benternet"]["service"]["last_heartbeat"] = GetCurrentTimestamp(); }
-    
+    void SetSenderName(const std::string& name) { info["benternet"]["service"]["name"] = name;} 
+
     inline string recvtopic()   { return (GetTopic()+">"+GetSession()+"?>");};
     inline string sendtopic()   { return (GetTopic()+">"+GetSession()+"!>");};
     
