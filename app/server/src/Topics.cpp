@@ -25,9 +25,20 @@ std::string Topic_template::GetFromString(const std::string& key, const std::str
     std::vector<std::string> parts;
     std::stringstream ss(haystack);
     std::string part;
-
+    
+    //topic>session>name>message 3xdelim
     while (std::getline(ss, part, '>')) {
-        parts.push_back(part);
+        if(parts.size() < MaxArgs){
+            parts.push_back(part);
+        }else{
+            if(ss.rdbuf()->in_avail() > 0){
+                std::string remainder(ss.str(),ss.tellg());
+                parts.push_back(move(remainder)); //should have auto move constructor but just to be sure
+            }else{
+                throw std::runtime_error("[VARVALUE] Invalid message appended");
+            }
+            break;
+        }
     }
 
     auto trim_suffix = [](std::string& s) {
@@ -36,43 +47,45 @@ std::string Topic_template::GetFromString(const std::string& key, const std::str
         }
     };
 
+    size_t psize{parts.size()};
+
     if (key == "PREFIX") {
-        if (parts.size() > 1) {
-            std::string session = parts[1];
+        if ( psize > 1 ) {
+            std::string session = parts[MPART::SESSION];
             trim_suffix(session);
-            return parts[0] + ">" + session + "!" + ">" + parts[2];
+            return parts[MPART::TOPIC] + ">" + session + ">" + parts[MPART::NAME];
         } else {
-            throw std::runtime_error("GetFromString: not enough prefix arguments");
+            throw std::runtime_error("[VARVALUE] Invalid message prefix");    
         }
     }
     else if (key == "SESSION") {
-        if (parts.size() > 1) {
-            std::string session = parts[1];
+        if ( psize > 1 ) {
+            std::string session = parts[MPART::SESSION];
             trim_suffix(session);
             return session;
         } else {
-            throw std::runtime_error("GetFromString: not enough session parts");
+            throw std::runtime_error("[VARVALUE] Invalid message prefix");    
         }
     }
     else if (key == "NAME") {
-        if (parts.size() > 2) {
-            return parts[2];
+        if ( psize > 2 ) {
+            return parts[MPART::NAME];
         } else {
-            throw std::runtime_error("GetFromString: NAME not found in message");
+            throw std::runtime_error("[VARVALUE] Invalid message appended");
         }
     }
     else if (key == "MESSAGE") {
-        if (parts.size() > 3) {
-            return parts[3];
+        if ( psize > 3 ) {
+            return parts[MPART::MESSAGE];
         } else {
-            throw std::runtime_error("GetFromString: MESSAGE not found in message");
+            throw std::runtime_error("[VARVALUE] Invalid message appended");
         }
     }
-    throw std::runtime_error("GetFromString: Invalid key");
+    throw std::runtime_error("[PARAM] Invalid key");
 }
 
 
-void Topic_template::SetServiceFields(std::string input) {
+void Topic_template::SetServiceFields(std::string input, const char& suffix) {
     std::vector<std::string> parts;
     std::stringstream ss(input);
     std::string part;
@@ -81,42 +94,41 @@ void Topic_template::SetServiceFields(std::string input) {
     }
 
     if (parts.size() < 4) {
-        throw std::runtime_error("SetServiceFields: Invalid input structure (need topic>session?>name>message)");
+        throw std::runtime_error("[STRUCTURE] Invalid input structure");
     }
 
     // Set prefix: topic>session
-    std::string prefix = GetFromString("PREFIX", parts[0] + ">" + parts[1]);
+    std::string prefix = GetFromString("PREFIX", parts[MPART::TOPIC] + ">" + parts[MPART::SESSION]);
+    Set_suffix(prefix,suffix);
     info["benternet"]["service"]["prefix"] = prefix;
 
-    // Topic
-    SetTopic(parts[0]);
+    SetTopic(parts[MPART::TOPIC]);
 
-    // Session: session?>name
-    std::string session = parts[1] + ">" + parts[2];
+    std::string session = parts[MPART::SESSION] + suffix;
     SetSession(session);
 
-    // Name (user sending the message)
-    SetSenderName(parts[3]);
+    SetSenderName(parts[MPART::NAME]);
+    SetMessage(parts[MPART::MESSAGE]);
+   
+    info["benternet"]["service"]["status"] = "active";
 
-    // Message
-    if (parts.size() > 4) {
-        SetMessage(parts[4]);
-    } else {
-        info["benternet"]["service"]["message"] = "**NOVALUE**";
-    }
+    SetLastHeartbeat();
+}
 
-    // Service status
-    if (info["benternet"]["service"].contains("status")) {
-        SetServiceStatus(info["benternet"]["service"]["status"].get<std::string>());
-    } else {
-        info["benternet"]["service"]["status"] = "**active**";
+void
+Topic_template::Set_suffix(string& prefix_structure, const char& suffix){
+    std::vector<std::string> parts;
+    std::stringstream ss(prefix_structure);
+    std::string part;
+    while (std::getline(ss, part, '>')) {
+        if(parts.size() +1> MPART::SESSION){
+            part += suffix;
+            parts.push_back(part);
+        }
     }
-
-    // Heartbeat
-    if (info["benternet"]["service"].contains("last_heartbeat")) {
-        SetLastHeartbeat();
-    } else {
-        info["benternet"]["service"]["last_heartbeat"] = "**NOVALUE**";
-        SetLastHeartbeat();
-    }
+    prefix_structure.clear();
+    prefix_structure = parts[MPART::TOPIC] + GetDelim() + 
+                       parts[MPART::SESSION] + GetDelim() +
+                       parts[MPART::NAME] + GetDelim() +
+                       parts[MPART::MESSAGE];
 }

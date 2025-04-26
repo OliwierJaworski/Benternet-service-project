@@ -8,6 +8,10 @@
 
 namespace Benternet{
 
+#define MaxArgs 3
+
+
+
 using json = nlohmann::json;
 using string = std::string;
 template<typename T>
@@ -16,19 +20,29 @@ using vector = std::vector<T>;
 extern json MainTopic_info;
 
 struct Topic_template{
-    int err{0};
+    enum MPART{
+        TOPIC,
+        SESSION,
+        NAME,
+        MESSAGE
+    };
 
+    int err{0};
+    
     json info;
     string Processed_Data{""};
-    void PrintJson() { std::cout << info.dump(4) << std::endl;}
+    void PrintJson() { std::cout << info.dump(4) << std::endl; }
+
     string GetCurrentTimestamp();
     string GetFromString(const std::string& key, const std::string& haystack);
-    void SetServiceFields(std::string input);
+    inline void Set_suffix(string& prefix_structure, const char& suffix);
+    void SetServiceFields(std::string input, const char& suffix);
     
     inline string GetTopic()    { return info["benternet"]["service"]["topic"].get<string>(); }
     inline string GetSession()  { return info["benternet"]["service"]["session"].get<string>(); };
     inline string GetMessage()  { return info["benternet"]["service"]["message"].get<string>(); };
     inline string GetDelim()    { return info["benternet"]["service"]["delim"].get<string>(); };
+    inline string GetID()    { return info["benternet"]["service"]["delim"].get<string>(); };
     inline string GetServiceStatus() { return info["benternet"]["service"]["status"].get<string>(); }
     inline string GetLastHeartbeat() { return info["benternet"]["service"]["last_heartbeat"].get<string>(); }
     inline int GetMaxConnections() { return info["benternet"]["configuration"]["max_connections"].get<int>(); }
@@ -40,10 +54,10 @@ struct Topic_template{
     inline void SetDelim(const string& delim) { info["benternet"]["service"]["delim"] = delim;}
     inline void SetServiceStatus(const string& status) { info["benternet"]["service"]["status"] = status; }
     inline void SetLastHeartbeat() { info["benternet"]["service"]["last_heartbeat"] = GetCurrentTimestamp(); }
-    void SetSenderName(const std::string& name) { info["benternet"]["service"]["name"] = name;} 
+    inline void SetSenderName(const std::string& name) { info["benternet"]["service"]["name"] = name;} 
 
     inline string recvtopic()   { return (GetTopic()+">"+GetSession()+"?>");};
-    inline string sendtopic()   { return (GetTopic()+">"+GetSession()+"!>");};
+    inline string sendtopic()   { return (GetTopic()+">"+GetSession()+"!>"+GetID()+">");};
     
 
     Topic_template(json& info_){info = info_;}
@@ -72,5 +86,7 @@ struct MainTopic : Topic_template{
 
     MainTopic() : Topic_template(MainTopic_info){} 
 };
+
+using MPART = Topic_template::MPART;
 
 };

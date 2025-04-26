@@ -123,15 +123,15 @@ MainTopic::UnpackMethod(zmq::message_t & message, std::any & data){
     std::cout << "[ received ] ----[ " << msg_str <<" ]----\n";
     auto& data_ = std::any_cast<MainTopic&>(data);
     try{
-        data_.SetServiceFields(msg_str);
+        data_.SetServiceFields(msg_str,'!');
         
         if(data_.pick_option(data_.GetFromString("MESSAGE",msg_str),data_.info) == "**INVALID**")
-            throw std::runtime_error("GetFromString: Invalid key or insufficient parts");
+            throw std::runtime_error("[VARVALUE] Invalid message appended");
 
     }catch(const std::runtime_error& err){
         data_.err=1;
         std::string err_str = err.what();
-        if(err_str == "GetFromString: Invalid key or insufficient parts"){
+        if(err_str == "[VARVALUE] Invalid message appended"){
             data_.Processed_Data = data_.GetFromString("PREFIX",msg_str)+">" + "[ Not supported content ] :: " + data_.GetHelp();
             std::cout << data_.Processed_Data << std::endl;
             return;
