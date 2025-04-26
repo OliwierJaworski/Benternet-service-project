@@ -15,7 +15,8 @@ json MainTopic_info = {
             { "last_heartbeat", "" }
         }},
         { "commands", {
-            { "!about", "Service for creationg/joining user made lobbies. to play DND with a AI dungeon master"},
+            { "!DontUseFirstEntry!", "Service for creating/joining user made lobbies. to play DND with a AI dungeon master" },
+            { "!about", "hello from about!" },
             { "!help", "[ CORRECT USAGE: ], topic>session>!**command** : for commands: !commands" },
             { "!time", "**FUNCTYPE**"},
             { "!play!", "**FUNCTYPE**" },
@@ -144,7 +145,7 @@ MainTopic::filter_cb(Bbuffer& forwarded_data){
     std::cout << "hello from callback!\n";
 
     std::cout << forwarded_data.GetUdataV().type().name() << "\n";
-    auto data_ = std::any_cast<MainTopic>(forwarded_data.GetUdataV());
+    auto& data_ = std::any_cast<MainTopic&>(forwarded_data.GetUdataV());
     if(data_.err){
         return;
     }
@@ -180,11 +181,14 @@ MainTopic::PackMethod(zmq::message_t &message, std::any &data){
 
 string 
 MainTopic::pick_option(const string& optionstring, json& info_){
+    std::cout << "[pick_option] Trying to find option: " << optionstring << "\n";
+
     if (optionstring.empty() || optionstring[0] != '!') {
         throw std::runtime_error("[VARVALUE] Invalid message appended");
     }
 
     for (auto& [key, val] : info_["benternet"]["commands"].items()) {
+        std::cout << "[pick_option] Checking key: " << key << "\n";
         if (key == optionstring) {
             return optionstring;
         }
@@ -200,7 +204,9 @@ MainTopic::ExecCommand(std::string& command){
    if(value.find("**FUNCTYPE**") != string::npos){
         command_table[command](*this);
    }else{
+    
         Processed_Data = value;
+        std::cout << "forwarded: "<<Processed_Data << "\n";
    }
 }
 
