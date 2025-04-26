@@ -6,8 +6,7 @@
 #include "Topics.h"
 
 int main() {
-   
-    Benternet::BTopics zmq_services;
-    zmq_services.run();
+    srand(time(0));
+    Benternet::BTopics::instance().run();
     return 0;
 }

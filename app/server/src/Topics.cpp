@@ -8,6 +8,45 @@ BTopics::run(){
     BManager::instance().shutdown();
 }
 
+void
+BTopics::CreateDNDThread(DndTopic data){
+    std::string topic = data.recvtopic()+ data.GetID() +">";
+
+    //receiving element
+    Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::sub);
+    Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24042");
+    Ebuilder.opt(ElemOPT::SOCKOPT, ZMQ_SUBSCRIBE, topic.c_str(), topic.size());
+    Ebuilder.AddUnpackMethod(DndTopic::UnpackMethod);
+    auto RecvStart = Ebuilder.build();
+
+    //Data process element
+    Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::filter);
+    Ebuilder.opt(ElemOPT::SOCK_CB, DndTopic::Process);
+    auto processreply = Ebuilder.build();
+
+    //Send element
+    Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::push);
+    Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24041");
+    Ebuilder.AddPackMethod(DndTopic::PackMethod);
+    auto sendReply = Ebuilder.build();
+
+    //build the pipeline for dnd session
+    Pbuilder.UserDataType<DndTopic>(data);
+    Pipeline_W pipeline = Pbuilder.build();
+
+    //enable and push back so it can start being used
+    pipeline.SetIsContinous(true);
+    pipelines.push_back( std::move(pipeline) );
+
+    pipeline.ElementLink(
+        std::move(RecvStart),
+        std::move(processreply),
+        std::move(sendReply)
+    );
+
+    BManager::instance().EnableSingle(pipeline);
+}
+
 string 
 Topic_template::GetCurrentTimestamp() {
     auto now = std::chrono::system_clock::now();
@@ -67,7 +106,8 @@ Topic_template::GetFromString(const std::string& key, const std::string& haystac
 }
 
 
-void Topic_template::SetServiceFields(std::string& input, const char& suffix) {
+void 
+Topic_template::SetServiceFields(std::string& input, const char& suffix) {
 
     std::vector<std::string> parts;
     std::stringstream ss(input);
@@ -135,3 +175,4 @@ Topic_template::Set_suffix(string& prefix_structure, const char& suffix){
 
     std::cout << "-------------------suffixed string result:" << prefix_structure << "\n";
 }
+

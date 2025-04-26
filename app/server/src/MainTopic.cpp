@@ -40,27 +40,6 @@ json MainTopic_info = {
             { "!id", "\n\033[1;34mDND-lobby\033[0m" },
             { "!status", "\n\\033[1;34mactive\033[0m" },
             { "!last_heartbeat", "**FUNCTYPE**" }
-        }},
-        { "configuration", {
-            { "max_connections", 100 },
-            { "timeout", 5000 },
-            { "auto_restart", true },
-            { "logging_enabled", true },
-            { "log_level", "INFO" }
-        }},
-        { "monitoring", {
-            { "uptime", "" },
-            { "error_count", 0 },
-            { "request_count", 0 },
-            { "health_check_interval", 60 }
-        }},
-        { "dependencies", {
-            { "**NOVALUE**", {
-                { "topic", "" },
-                { "session", "" },
-                { "argument", "" },
-                { "Vartype", "" }
-            }}
         }}
     }}
 };
@@ -76,12 +55,6 @@ BTopics::CreateMainThread(){
     Ebuilder.opt(ElemOPT::SOCKOPT, ZMQ_SUBSCRIBE, topic.c_str(), topic.size());
     Ebuilder.AddUnpackMethod(MainTopic::UnpackMethod);
     auto RecvStart = Ebuilder.build();
-
-    Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::sub);
-    Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24043");
-    Ebuilder.opt(ElemOPT::SOCKOPT, ZMQ_SUBSCRIBE, topic.c_str(), topic.size());
-    Ebuilder.AddUnpackMethod(MainTopic::UnpackMethod);
-    auto RecvStart1 = Ebuilder.build();
 
     //Data Filter element
     Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::filter);
@@ -114,10 +87,7 @@ BTopics::CreateMainThread(){
     BManager::instance().EnableSingle(pipeline);
 }
 
-void
-MainTopic::CreateDNDSession(){
-   
-}
+
 
 void 
 MainTopic::UnpackMethod(zmq::message_t & message, std::any & data){
@@ -229,7 +199,22 @@ MainTopic::ExecCommand(std::string& command){
 
 void 
 MainTopic::CT_play(MainTopic& data){
- //big big hassle :(
+    std::string session_id{""};
+    DndTopic topicData;
+
+    for(int i=0;i<5;i++){
+        session_id += static_cast<char>((rand() % (126 - 32 + 1) + 32));
+    }
+    session_id += '?';
+    topicData.SetID( data.GetID() );
+    topicData.SetSession(session_id);
+    topicData.SetLastHeartbeat();
+
+    //set all values for the dnd 
+    BTopics::instance().CreateDNDThread( std::move(topicData) );
+
+    //return the unique session ID 
+    data.Processed_Data += "\n\033[1;34mYour unique session id is: \033[0m\033[1;32m" + session_id + "\033[0m\n";
 }
 
 };

@@ -10,15 +10,15 @@ namespace Benternet{
 
 #define MaxArgs 3
 
-
-
 using json = nlohmann::json;
 using string = std::string;
 template<typename T>
 using vector = std::vector<T>;
 
-extern json MainTopic_info;
+class DndTopic;
 
+extern json MainTopic_info;
+extern json DNDtopic_info;
 
 struct Topic_template{
     enum MPART{
@@ -49,14 +49,14 @@ struct Topic_template{
     inline int GetMaxConnections()noexcept { return info["benternet"]["configuration"]["max_connections"].get<int>(); }
     inline string GetHelp()noexcept { return info["benternet"]["commands"]["!help"].get<string>(); }
 
-    inline void SetTopic(const string& topic) { info["benternet"]["service"]["topic"] = topic; }
-    inline void SetSession(const string& session) { info["benternet"]["service"]["session"] = session; }
-    inline void SetMessage(const string& message) { info["benternet"]["service"]["message"] = message; }
-    inline void SetDelim(const string& delim) { info["benternet"]["service"]["delim"] = delim; }
-    inline void SetID(const string& ID) { info["benternet"]["service"]["name"] = ID; };
-    inline void SetServiceStatus(const string& status) { info["benternet"]["service"]["status"] = status; }
+    inline void SetTopic(const string topic) { info["benternet"]["service"]["topic"] = topic; }
+    inline void SetSession(const string session) { info["benternet"]["service"]["session"] = session; }
+    inline void SetMessage(const string message) { info["benternet"]["service"]["message"] = message; }
+    inline void SetDelim(const string delim) { info["benternet"]["service"]["delim"] = delim; }
+    inline void SetID(const string ID) { info["benternet"]["service"]["name"] = ID; };
+    inline void SetServiceStatus(const string status) { info["benternet"]["service"]["status"] = status; }
     inline void SetLastHeartbeat() { info["benternet"]["service"]["last_heartbeat"] = GetCurrentTimestamp(); }
-    inline void SetSenderName(const std::string& name) { info["benternet"]["service"]["name"] = name;} 
+    inline void SetSenderName(const std::string name) { info["benternet"]["service"]["name"] = name;} 
 
     inline string recvtopic()   { return (GetTopic()+">"+GetSession()+"?>");};
     inline string sendtopic()   { return (GetTopic()+">"+GetSession()+"!>"+GetID()+">");};
@@ -68,6 +68,9 @@ struct Topic_template{
 class BTopics{
 public:
     void run();
+
+    static BTopics& instance(){ static BTopics btopic; return btopic; }
+    void CreateDNDThread(DndTopic data);
 
     BTopics(){}
     ~BTopics(){}
@@ -90,7 +93,7 @@ struct MainTopic : Topic_template{
     static void CT_last_heartbeat(MainTopic& data){ data.Processed_Data = data.GetLastHeartbeat(); }
 
     void ExecCommand(std::string& command);
-    void CreateDNDSession();
+    
 
     string pick_option(const string& optionstring, json& info_);
 
@@ -104,8 +107,11 @@ struct MainTopic : Topic_template{
 };
 
 struct DndTopic : Topic_template{
+    static void Process( Bbuffer& forwarded_data );
+    static void UnpackMethod(zmq::message_t &message, std::any &data);
+    static void PackMethod(zmq::message_t &message, std::any &data);
     
-
+    DndTopic() : Topic_template(DNDtopic_info){} 
 };
 
 using MPART = Topic_template::MPART;
