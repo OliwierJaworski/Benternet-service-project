@@ -82,7 +82,6 @@ public:
         }
     }    
 
-    
     Bbuffer() = default;
     ~Bbuffer() =default;
 private:

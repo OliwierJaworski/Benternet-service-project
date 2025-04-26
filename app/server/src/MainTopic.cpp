@@ -15,16 +15,16 @@ json MainTopic_info = {
             { "last_heartbeat", "" }
         }},
         { "commands", {
+            { "about", "Service for creationg/joining user made lobbies. to play DND with a AI dungeon master"},
             { "help", "[ CORRECT USAGE: ], topic>session>!**command** : for commands: !commands" },
-            { "time", "" },
-            { "play!", "" },
-            { "message", "" },
-            { "delim", ">" },
+            { "time", "**FUNCTYPE**"},
+            { "play!", "**FUNCTYPE**" },
+            { "delim", ">" }, //wont be allowed yet to change delim
             { "ActiveUsers", 0 },
             { "Sessions", json::array({
                 { {"sessionID", ""}, {"Players", json::array({""})} }
             }) },
-            { "id", "service_001" },
+            { "id", "DND-lobby" },
             { "status", "active" },
             { "last_heartbeat", "" }
         }},
@@ -111,8 +111,7 @@ MainTopic::filter_cb(Bbuffer& forwarded_data){
     if(data_.err){
         return;
     }
-        
-
+    data_.ExecCommand(data_.Processed_Data);
 }
 
 
@@ -122,20 +121,33 @@ MainTopic::UnpackMethod(zmq::message_t & message, std::any & data){
     std::string msg_str(static_cast<char*>(message.data()), message.size());
     std::cout << "[ received ] ----[ " << msg_str <<" ]----\n";
     auto& data_ = std::any_cast<MainTopic&>(data);
-    try{
-        data_.SetServiceFields(msg_str,'!');
+    
+    try {
+        std::string msg_str(static_cast<char*>(message.data()), message.size());
+        std::cout << "[ received ] ----[ " << msg_str <<" ]----\n";
         
-        if(data_.pick_option(data_.GetFromString("MESSAGE",msg_str),data_.info) == "**INVALID**")
-            throw std::runtime_error("[VARVALUE] Invalid message appended");
+        auto& data_ = std::any_cast<MainTopic&>(data);
 
-    }catch(const std::runtime_error& err){
-        data_.err=1;
-        std::string err_str = err.what();
-        if(err_str == "[VARVALUE] Invalid message appended"){
-            data_.Processed_Data = data_.GetFromString("PREFIX",msg_str)+">" + "[ Not supported content ] :: " + data_.GetHelp();
-            std::cout << data_.Processed_Data << std::endl;
-            return;
+        try {
+            data_.SetServiceFields(msg_str, '!');
+            data_.Processed_Data = data_.pick_option(data_.GetFromString("MESSAGE", msg_str), data_.info);
+        } 
+        catch (const std::runtime_error& err) {
+            data_.err = 1;
+            std::string err_str = err.what();
+            if (err_str == "[VARVALUE] Invalid message appended") {
+                data_.Processed_Data =  data_.GetTopic() + data_.GetDelim() + 
+                                        data_.GetSession() + data_.GetDelim() +
+                                        data_.GetID() + data_.GetDelim() +
+                                        "[ Not supported content ] :: " + data_.GetHelp();
+                std::cout << data_.Processed_Data << std::endl;
+                return;
+            }
         }
+    } catch (const std::runtime_error& err) {
+        std::cout << "[FATAL ERROR] UNABLE TO RECOVER FROM FOLLOWING ERROR:\n" << std::endl;
+        std::string err_str = err.what();
+        exit(1);
     }
     message.size();
 }
@@ -143,18 +155,18 @@ MainTopic::UnpackMethod(zmq::message_t & message, std::any & data){
 string 
 MainTopic::pick_option(const string& optionstring, json& info_){
     if (optionstring.empty() || optionstring[0] != '!') {
-        return "**INVALID**";
+        throw std::runtime_error("[VARVALUE] Invalid message appended");
     }
 
     std::string command = optionstring.substr(1); // remove '!'
 
-    for (auto& [key, val] : info_["benternet"]["service"].items()) {
+    for (auto& [key, val] : info_["benternet"]["commands"].items()) {
         if (key == command) {
             return command;
         }
     }
 
-    return "**INVALID**";
+    throw std::runtime_error("[VARVALUE] Invalid message appended"); //command not supported 
 }
 
 void 
@@ -167,4 +179,27 @@ MainTopic::PackMethod(zmq::message_t &message, std::any &data){
     std::string msg_str(static_cast<char*>(message.data()), message.size());
     std::cout << "[ Sending ] ----[ " << msg_str <<" ]----\n";
 }
+
+void
+MainTopic::ExecCommand(std::string& command){
+   string value =info["benternet"]["commands"][command].get<std::string>();
+
+   if(value.find("**FUNCTYPE**") != string::npos){
+        command_table[command](*this);
+   }else{
+        Processed_Data = value;
+   }
+}
+void 
+MainTopic::CT_time(MainTopic& data){
+
+}
+void 
+MainTopic::CT_play(MainTopic& data){
+
+}
+void MainTopic::CT_last_heartbeat(MainTopic& data){
+
+}
+
 };
