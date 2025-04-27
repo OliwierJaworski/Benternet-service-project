@@ -72,7 +72,7 @@ public:
     static BTopics& instance(){ static BTopics btopic; return btopic; }
     void CreateDNDThread(DndTopic data);
 
-    BTopics(){}
+    BTopics(){pipelines.reserve(100);}
     ~BTopics(){}
 private:
 
