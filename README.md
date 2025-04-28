@@ -9,7 +9,8 @@ The **Benternet Services Project** is a terminal- and session-based service runn
 
 At its core, the project relies on a custom-built framework, utilizing the **zmqpp** library to interface with the Benternet network. The framework design is inspired by the **GStreamer pipeline** model, empowering users to construct their own modular and flexible service pipelines.
 
-The modular pipeline serves as the foundation for the **DND-SERVICE**.
+The modular pipeline serves as the foundation for the **DND-SERVICE**.<br>
+
 In the DND-SERVICE, players embark on a **Dungeons & Dragons**-inspired campaign, guided by an AI Dungeon Master.
 The AI Dungeon Master dynamically adapts the world and scenarios to the players' actions, ensuring a unique and immersive experience each time.
 Whether venturing alone or teaming up with friends, users can explore a world full of: Horrors, Mysteries, challenges and Legendary monster battles (yes, goblins included!)
