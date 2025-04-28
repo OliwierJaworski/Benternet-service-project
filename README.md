@@ -1,8 +1,10 @@
 # Benternet-services-project
 
-![Overview](cooleimage.png)
 
-## About the project
+
+## 🚀 About the project
+
+<img src="./resources/cover.png" width="25%" height="auto" /><br>
 The **Benternet Services Project** is a terminal- and session-based service running on the Benternet network. The backend is primarily developed in **C++**, with planned expansions using **JavaScript** to provide an HTML-based graphical user interface.
 
 At its core, the project relies on a custom-built framework, utilizing the **zmqpp** library to interface with the Benternet network. The framework design is inspired by the **GStreamer pipeline** model, empowering users to construct their own modular and flexible service pipelines.
@@ -12,7 +14,7 @@ In the DND-SERVICE, players embark on a **Dungeons & Dragons**-inspired campaign
 The AI Dungeon Master dynamically adapts the world and scenarios to the players' actions, ensuring a unique and immersive experience each time.
 Whether venturing alone or teaming up with friends, users can explore a world full of: Horrors, Mysteries, challenges and Legendary monster battles (yes, goblins included!)
 
-## DND-SERVICE
+## 🧙‍♂️ DND-SERVICE
 
 This section explains how users can connect to the service and what they can expect when using it.
 
@@ -24,13 +26,14 @@ This section explains how users can connect to the service and what they can exp
 
 The system is designed according to the Benternet uniform style, as outlined by the lector, and has been extended for DND-SERVICE.
 
-### Communication Structure
+### 🔗 Communication Structure
 
-It consists of four parts:
-- **Topic**: The service identifier.
-- **Session**: A lobby or user-created session.
-- **Name**: Personalized username for identification.
-- **Message**: Commands or interaction data.
+| Field   | Purpose                        |
+|:--------|:-------------------------------|
+| Topic   | The service identifier         |
+| Session | Lobby or user-created session  |
+| Name    | Personalized username          |
+| Message | Commands or data to interact   |
 
 This format allows multiple users to connect to the same session while keeping communication organized.
 
@@ -83,7 +86,7 @@ In the lobby, users can interact with the service using various commands to:
 
 ---
 
-## Game Session
+## 🧝‍♂️ Game Session
 
 Once inside a game session, users can interact with the AI Dungeon Master using actions marked with a `!`.  
 The list of available actions can be retrieved with the `!actions` command.
@@ -108,7 +111,8 @@ The familiar lobby commands remain available inside game sessions for a smooth a
 The rest is up to the players!  
 The AI Dungeon Master generates scenarios based on player actions, creating a unique, dynamic experience every time.
 
-### Outsourced Services
+
+### 🌐 Outsourced Services
 
 Each service within the system comes with its own **dependency list**, annotated in a generated **JSON object** during class instantiation.
 
@@ -130,7 +134,7 @@ This architecture allows seamless expansion of functionalities without needing t
 
 ---
 
-#### Example: Dice Service Integration
+#### 🎲 Example: Dice Service Integration
 
 One outsourced service example is the **Dice Service** (`Dice>dx`), where users can retrieve random dice rolls based on their desired dice size.
 
@@ -148,13 +152,14 @@ Supported dice examples:
 
 ---
 
-## FRAMEWORK
+## 🏗️ FRAMEWORK
 
 Handling traffic from user prompts to system calls is managed through a custom-built framework.
 
 ---
 
-### Key Features
+### ✨ Key Features
+
 - **Modular Pipeline Framework**  
   Create, customize, and extend service pipelines easily in a plug-and-play manner.
 - **ZMQPP Integration**  
@@ -164,7 +169,7 @@ Handling traffic from user prompts to system calls is managed through a custom-b
 
 ---
 
-### Inner Workings
+### 🧩 Inner Workings
 
 The framework revolves around three main classes:
 
@@ -179,7 +184,7 @@ The framework revolves around three main classes:
 
 ---
 
-## BManager Key Functionality
+## 📋 BManager Key Functionality
 
 - Manages all user-created pipelines.
 - Polls events for each pipeline:
@@ -193,7 +198,7 @@ The framework revolves around three main classes:
 
 ---
 
-## *Factory objects
+## 🏭 *Factory objects
 interface for creating pipelines and elements.
 
 
@@ -206,7 +211,7 @@ Both **PFactory** and **EFactory** offer interfaces for:
 
 ---
 
-## Pipelines
+## ⚙️ Pipelines
 
 Pipelines act as containers for holding multiple **Element** objects.  
 Key properties:
@@ -215,7 +220,7 @@ Key properties:
 
 ---
 
-## Elements
+## 🔥 Elements
 
 Elements perform specific tasks such as:
 
@@ -233,7 +238,7 @@ Each Element has a **callback (cb)** that defines its specific behavior:
 
 ---
 
-### Used Libraries
+### 🛠️ Used Libraries
 
 - [ZeroMQ / zmqpp](https://github.com/zeromq/zmqpp)
 - [nlohmann/json (JSON for Modern C++)](https://github.com/nlohmann/json)
@@ -253,5 +258,5 @@ Each Element has a **callback (cb)** that defines its specific behavior:
 
 ![Class Relationships](path/to/your_class_diagram.png)
 
-### Contributors
+### ✍️ Contributors
 - [**Oliwier Jaworski**](https://github.com/OliwierJaworski)
