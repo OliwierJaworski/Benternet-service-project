@@ -35,3 +35,7 @@ source ~/.bashrc
 
 https://www.reddit.com/r/cpp/comments/11r9xni/build_systems_for_c/?rdt=44492
 https://github.com/bitmeal/vcpkg-cmake-integration
+
+
+-- how to debug memory leak / checking for memory leaks 
+- sudo valgrind --leak-check=full --track-origins=yes --error-exitcode=1 ./Benternet-service-project/app/build/server/server_zmq
