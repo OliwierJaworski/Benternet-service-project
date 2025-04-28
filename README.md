@@ -111,6 +111,7 @@ The familiar lobby commands remain available inside game sessions for a smooth a
 The rest is up to the players!  
 The AI Dungeon Master generates scenarios based on player actions, creating a unique, dynamic experience every time.
 
+
 ### 🌐 Outsourced Services
 
 Each service within the system comes with its own **dependency list**, annotated in a generated **JSON object** during class instantiation.
@@ -158,6 +159,7 @@ Handling traffic from user prompts to system calls is managed through a custom-b
 ---
 
 ### ✨ Key Features
+
 - **Modular Pipeline Framework**  
   Create, customize, and extend service pipelines easily in a plug-and-play manner.
 - **ZMQPP Integration**  
@@ -258,5 +260,3 @@ Each Element has a **callback (cb)** that defines its specific behavior:
 
 ### ✍️ Contributors
 - [**Oliwier Jaworski**](https://github.com/OliwierJaworski)
-
-user traveling in a anime isekai setting while the ai is overseeing him Papercraft Pixel Art Cartoon Art Art Noir  
