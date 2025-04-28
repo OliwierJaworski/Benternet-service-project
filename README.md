@@ -1,8 +1,10 @@
 # Benternet-services-project
 
-![Overview](cooleimage.png)
 
-## About the project
+
+## 🚀 About the project
+
+<img src="./resources/cover.png" width="25%" height="auto" /><br>
 The **Benternet Services Project** is a terminal- and session-based service running on the Benternet network. The backend is primarily developed in **C++**, with planned expansions using **JavaScript** to provide an HTML-based graphical user interface.
 
 At its core, the project relies on a custom-built framework, utilizing the **zmqpp** library to interface with the Benternet network. The framework design is inspired by the **GStreamer pipeline** model, empowering users to construct their own modular and flexible service pipelines.
@@ -12,7 +14,7 @@ In the DND-SERVICE, players embark on a **Dungeons & Dragons**-inspired campaign
 The AI Dungeon Master dynamically adapts the world and scenarios to the players' actions, ensuring a unique and immersive experience each time.
 Whether venturing alone or teaming up with friends, users can explore a world full of: Horrors, Mysteries, challenges and Legendary monster battles (yes, goblins included!)
 
-## DND-SERVICE
+## 🧙‍♂️ DND-SERVICE
 
 This section explains how users can connect to the service and what they can expect when using it.
 
@@ -24,13 +26,14 @@ This section explains how users can connect to the service and what they can exp
 
 The system is designed according to the Benternet uniform style, as outlined by the lector, and has been extended for DND-SERVICE.
 
-### Communication Structure
+### 🔗 Communication Structure
 
-It consists of four parts:
-- **Topic**: The service identifier.
-- **Session**: A lobby or user-created session.
-- **Name**: Personalized username for identification.
-- **Message**: Commands or interaction data.
+| Field   | Purpose                        |
+|:--------|:-------------------------------|
+| Topic   | The service identifier         |
+| Session | Lobby or user-created session  |
+| Name    | Personalized username          |
+| Message | Commands or data to interact   |
 
 This format allows multiple users to connect to the same session while keeping communication organized.
 
@@ -83,7 +86,7 @@ In the lobby, users can interact with the service using various commands to:
 
 ---
 
-## Game Session
+## 🧝‍♂️ Game Session
 
 Once inside a game session, users can interact with the AI Dungeon Master using actions marked with a `!`.  
 The list of available actions can be retrieved with the `!actions` command.
@@ -99,38 +102,161 @@ The familiar lobby commands remain available inside game sessions for a smooth a
 
 ### Available Actions
 - **!say** — Perform an in-world action as the player.
+- **!roll** — Perform a roll.
 - **!quit** — Quit the current session.
 - **!gold** — View the current gold amount.
 - **!items** — View the inventory items.
 - **!interactions** — List all users the player has interacted with.
 
----
-
 The rest is up to the players!  
 The AI Dungeon Master generates scenarios based on player actions, creating a unique, dynamic experience every time.
 
-## FRAMEWORK
-handling the traffic from user prompt to system call will be handled using the framework at hand.
-### Key Features
+### 🌐 Outsourced Services
+
+Each service within the system comes with its own **dependency list**, annotated in a generated **JSON object** during class instantiation.
+
+This JSON object:
+- Defines the services that the current service depends on.
+- Enables a **modular approach** to extending features dynamically.
+- Allows easy querying and integration with other services during runtime.
+
+---
+
+#### Service Dependency Management
+
+Upon creation, the service:
+1. Parses its dependency list from the JSON object.
+2. Establishes the necessary connections.
+3. Dynamically creates Pipelines responsible for interfacing with the external services.
+
+This architecture allows seamless expansion of functionalities without needing to hardcode dependencies.
+
+---
+
+#### 🎲 Example: Dice Service Integration
+
+One outsourced service example is the **Dice Service** (`Dice>dx`), where users can retrieve random dice rolls based on their desired dice size.
+
+Supported dice examples:
+- **d2** (coin flip)
+- **d4**
+- **d20** (standard DND dice)
+- **d100** (percentile roll)
+
+#### How It Works
+- The DND-Service reads its dependency list and detects the `Dice>dx` service.
+- A dedicated **Pipeline** is created to handle communication with the Dice service.
+- Users inside the DND session can now request dice rolls without the DND-Service itself handling the randomization logic.
+- This keeps services **modular**, **lightweight**, and **focused**.
+
+---
+
+## 🏗️ FRAMEWORK
+
+Handling traffic from user prompts to system calls is managed through a custom-built framework.
+
+---
+
+### ✨ Key Features
 - **Modular Pipeline Framework**  
   Create, customize, and extend service pipelines easily in a plug-and-play manner.
 - **ZMQPP Integration**  
-  Seamlessly connects and communicates over the Benternet network.
+  Connects and communicates over the Benternet network.
 - **Extensible Backend**  
-  Primarily built in C++, with future frontend support using JavaScript.
-### Inner workings
-### socket logic
-### USED libraries
-- zmq/zmqpp
-- nlohmann
-- openai-cpp
+  Primarily built in **C++**, with future frontend support using **JavaScript**.
+
+---
+
+### 🧩 Inner Workings
+
+The framework revolves around three main classes:
+
+- **BManager**  
+  Singleton class responsible for managing the ZMQ context. Handles creating, adding, removing, and interfacing with user-defined pipelines. It also provides an interface for enabling, disabling, making pipelines continuous, and adding elements to pipelines.
+
+- **PFactory**  
+  Factory class for creating **Pipeline** wrapper objects using the builder pattern. Pipelines created by PFactory are managed and executed by the BManager.
+
+- **EFactory**  
+  Factory class for creating **Element** objects (also using the builder pattern) which are consumed by Pipelines.
+
+---
+
+## 📋 BManager Key Functionality
+
+- Manages all user-created pipelines.
+- Polls events for each pipeline:
+  - **POLLIN** (incoming message)
+  - **POLLOUT** (ready to send)
+  - or a **filter object callback** (cb).
+- Provides an interface to:
+  - Push and pop pipelines.
+  - Run pipelines.
+  - Set pipelines to continuous mode.
+
+---
+
+## 🏭 *Factory objects
+interface for creating pipelines and elements.
 
 
+## Factory Objects
 
+Both **PFactory** and **EFactory** offer interfaces for:
 
+- Creating new objects without the need to see internal functionality.
+- Simplifying object construction using the builder pattern.
 
+---
 
-### Getting started
+## ⚙️ Pipelines
 
-### Contributors
+Pipelines act as containers for holding multiple **Element** objects.  
+Key properties:
+- They can hold **user-defined data** using `templates` and `std::any`.
+- Data is accessible and modifiable across each Element within a Pipeline.
+
+---
+
+## 🔥 Elements
+
+Elements perform specific tasks such as:
+
+- **Receiving** from sockets.
+- **Processing** data (filters).
+- **Sending** data to sockets.
+
+Each Element has a **callback (cb)** that defines its specific behavior:
+- **Recv Elements**:  
+  - Deserialize incoming `zmq::message_t` messages.
+- **Filter Elements**:  
+  - Process and transform data according to user-defined logic.
+- **Send Elements**:  
+  - Serialize processed data back into `zmq::message_t` messages for transmission.
+
+---
+
+### 🛠️ Used Libraries
+
+- [ZeroMQ / zmqpp](https://github.com/zeromq/zmqpp)
+- [nlohmann/json (JSON for Modern C++)](https://github.com/nlohmann/json)
+- [openai-cpp (Unofficial OpenAI C++ SDK)](https://github.com/Olivine-Labs/openai-cpp)
+
+---
+
+## Diagrams and Workflow
+
+*(Diagrams coming soon!)*
+
+- **Workflow Overview Diagram** — How user prompts travel through the framework.
+- **Class Relationship Diagram** — How BManager, PFactory, EFactory, Pipelines, and Elements interact.
+- **Pipeline Lifecycle Diagram** — Building, running, and modifying pipelines dynamically.
+
+![Workflow Overview](path/to/your_workflow_image.png)
+
+![Class Relationships](path/to/your_class_diagram.png)
+
+### ✍️ Contributors
 - [**Oliwier Jaworski**](https://github.com/OliwierJaworski)
+
+user traveling in a anime isekai setting while the ai is overseeing him Papercraft Pixel Art Cartoon Art Art Noir  
