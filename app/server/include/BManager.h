@@ -75,7 +75,7 @@ public:
     inline void shutdown() {for(auto& pipeline : pipelines) pipeline->Shutdown(); BManager::context()->close();}
 
 private:
-    BManager(){}
+    BManager(){pipelines.reserve(100);}
     ~BManager(){}
     
     std::vector<std::shared_ptr<Pipeline_T>> pipelines;
