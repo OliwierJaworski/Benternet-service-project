@@ -6,6 +6,11 @@
 #include <any>
 #include <cassert>
 
+#ifdef WIN32
+    #define POLL_IN 1
+    #define POLL_OUT 3
+#endif
+
 class EFactory;
 class Pipeline_T;
 class Element_T;
@@ -100,7 +105,7 @@ private:
 struct PollItem_T{
     zmq::pollitem_t* Item(){return &item;}
     //operator zmq::pollitem_t*() {return &item;};  //-> does not work
-    PollItem_T(void* socket_, short eventtype_, Element_T& elem) : item{ .socket= socket_, .fd=-1, .events = eventtype_, .revents=0},
+    PollItem_T(void* socket_, short eventtype_, Element_T& elem) : item{ .socket= socket_, .fd=0, .events = eventtype_, .revents=0},
                                                                                                                      element{elem}{}
 private:
     zmq::pollitem_t item;
