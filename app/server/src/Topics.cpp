@@ -60,7 +60,7 @@ Topic_template::GetCurrentTimestamp() {
     return timestamp_stream.str();
 }
 
-std::string 
+string 
 Topic_template::GetFromString(const std::string& key, const std::string& haystack) {
     std::vector<std::string> parts;
     std::stringstream ss(haystack);

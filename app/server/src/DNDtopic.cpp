@@ -51,6 +51,7 @@ DndTopic::Process( Bbuffer& forwarded_data ){
     auto chat = openai::chat().create(uquery);
     data_.Processed_Data = chat["choices"][0]["message"]["content"].dump();
 }
+
 void 
 DndTopic::UnpackMethod(zmq::message_t &message, std::any &data){
     std::string msg_str(static_cast<char*>(message.data()), message.size());
@@ -58,6 +59,7 @@ DndTopic::UnpackMethod(zmq::message_t &message, std::any &data){
     
     data_.Processed_Data = data_.GetFromString("MESSAGE",msg_str);
 }
+
 void 
 DndTopic::PackMethod(zmq::message_t &message, std::any &data){
     auto& data_ = std::any_cast<DndTopic&>(data);

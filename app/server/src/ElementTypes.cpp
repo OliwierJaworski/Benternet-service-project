@@ -75,9 +75,11 @@ Push_Element::process(){
         EmptyBuffer(sink->GetICEBuffer()->GetzmqData()); //prevent feedback
 
         Serialize(sink->GetICEBuffer()->GetzmqData(),sink->GetICEBuffer()->GetUdataV());
-        std::cout << static_cast<const char*>(sink->GetICEBuffer()->GetzmqData().data()),
-        sink->GetICEBuffer()->GetzmqData().size();
-        
+
+        std::cout   << static_cast<const char*>(sink->GetICEBuffer()->GetzmqData().data())
+                    << " [size: " << sink->GetICEBuffer()->GetzmqData().size() << "]"
+                    << std::endl;
+
         if( IsBufferEmpty(sink->GetICEBuffer()->GetzmqData()) )
             ThrowInvalid("[ZMQ::SEND] Error: sending a value of 0 bytes is illegal.");
 

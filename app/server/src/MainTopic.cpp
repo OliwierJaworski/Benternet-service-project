@@ -29,7 +29,7 @@ json MainTopic_info = {
                 "\033[1;34m!last_heartbeat\033[0m: \033[1;32mShows the last heartbeat timestamp (Function type).\033[0m\n"
             },
             { "!about", "\n\033[1;34mService for creating/joining user made lobbies. to play DND with an AI dungeon master\033[0m" },
-            { "!help", "\n\\033[1;34m[ CORRECT USAGE: ], topic>session>!**command** : for commands: !commands\033[0m" },
+            { "!help", "\n\033[1;34m[ CORRECT USAGE: ], topic>session>!**option** : for commands: !commands\033[0m\n" }, // - / removed
             { "!time", "**FUNCTYPE**" },
             { "!play!", "**FUNCTYPE**" },
             { "!delim", "\n\\033[1;34m>\033[0m" }, // won't be allowed yet to change delim
@@ -95,6 +95,7 @@ MainTopic::UnpackMethod(zmq::message_t & message, std::any & data){
     std::string msg_str(static_cast<char*>(message.data()), message.size());
     std::cout << "[ received ] ----[ " << msg_str <<" ]----\n";
     auto& data_ = std::any_cast<MainTopic&>(data);
+    data_.err = 0;
     
     try {
         std::string msg_str(static_cast<char*>(message.data()), message.size());
@@ -131,7 +132,7 @@ MainTopic::filter_cb(Bbuffer& forwarded_data){
     
     std::cout << "hello from callback!\n";
 
-    std::cout << forwarded_data.GetUdataV().type().name() << "\n";
+    //std::cout << forwarded_data.GetUdataV().type().name() << "\n";
     auto& data_ = std::any_cast<MainTopic&>(forwarded_data.GetUdataV());
     if(data_.err){
         return;
@@ -175,8 +176,8 @@ MainTopic::pick_option(const string& optionstring, json& info_){
     }
 
     for (auto& [key, val] : info_["benternet"]["commands"].items()) {
-        std::cout << "[pick_option] Checking key: " << key << "\n";
         if (key == optionstring) {
+            std::cout << "[pick_option] Checking key: " << key << "\n";
             return optionstring;
         }
     }
@@ -186,14 +187,14 @@ MainTopic::pick_option(const string& optionstring, json& info_){
 
 void
 MainTopic::ExecCommand(std::string& command){
-   string value =info["benternet"]["commands"][command].get<std::string>();
+   string value = info["benternet"]["commands"][command].get<std::string>();
    
    if(value.find("**FUNCTYPE**") != string::npos){
         command_table[command](*this);
+
    }else{
-    
         Processed_Data = value;
-        std::cout << "forwarded: "<<Processed_Data << "\n";
+        std::cout << "forwarded: "<< Processed_Data << "\n";
    }
 }
 

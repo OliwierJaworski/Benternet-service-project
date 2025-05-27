@@ -14,7 +14,6 @@ BManager::Run(){
                 pipeline->pollevents();
                 any_running = true;
             }
-            //std::cout << "traversed pipeline\n";
         }
 
         if (!any_running) {
