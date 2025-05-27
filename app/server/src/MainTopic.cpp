@@ -206,7 +206,7 @@ MainTopic::CT_play(MainTopic& data){
     for(int i=0;i<5;i++){
         session_id += static_cast<char>((rand() % (126 - 32 + 1) + 32));
     }
-    session_id += '?';
+
     topicData.SetID( data.GetID() );
     topicData.SetSession(session_id);
     topicData.SetLastHeartbeat();

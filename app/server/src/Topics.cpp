@@ -10,8 +10,9 @@ BTopics::run(){
 
 void
 BTopics::CreateDNDThread(DndTopic data){
+    //std::string topic = data.recvtopic()+ data.GetID() +">";
     std::string topic = data.recvtopic()+ data.GetID() +">";
-
+    std::cout << "SUBTOPIC = " << topic << std::endl;
     //receiving element
     Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::sub);
     Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24042");
