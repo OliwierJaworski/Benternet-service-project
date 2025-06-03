@@ -1,4 +1,5 @@
 #include "Topics.h"
+
 namespace Benternet{
 
 json DNDtopic_info = {
@@ -39,7 +40,7 @@ DndTopic::Process( Bbuffer& forwarded_data ){
     ;
     json uquery = R"(
         {
-            "model": "mn-violet-lotus-12b",
+            "model": "llama-3.2-1b-instruct",
             "messages":[{"role":"user", "content":" "}],
             "max_tokens": 2000,
             "temperature": 0,
@@ -51,6 +52,7 @@ DndTopic::Process( Bbuffer& forwarded_data ){
     auto chat = openai::chat().create(uquery);
     data_.Processed_Data = chat["choices"][0]["message"]["content"].dump();
 }
+
 void 
 DndTopic::UnpackMethod(zmq::message_t &message, std::any &data){
     std::string msg_str(static_cast<char*>(message.data()), message.size());
@@ -58,6 +60,7 @@ DndTopic::UnpackMethod(zmq::message_t &message, std::any &data){
     
     data_.Processed_Data = data_.GetFromString("MESSAGE",msg_str);
 }
+
 void 
 DndTopic::PackMethod(zmq::message_t &message, std::any &data){
     auto& data_ = std::any_cast<DndTopic&>(data);
@@ -65,4 +68,53 @@ DndTopic::PackMethod(zmq::message_t &message, std::any &data){
     message.rebuild(send.size());
     memcpy(message.data(), send.c_str(), send.size());
 }
+
+void 
+Dnd_MP::Process( Bbuffer& forwarded_data ){
+    std::vector<string> Pnames;
+    std::vector<Element_T> recv_ch;
+    
+    std::regex u_template(R"(\[([^\]]+)\])");
+    std::smatch match;
+
+    auto& data_ = std::any_cast<DndTopic&>(forwarded_data.GetUdataV());
+    std::string topic = data_.recvtopic()+ data_.GetID() +">";
+    std::string ns{data_.Processed_Data};
+
+    auto it = ns.cbegin();
+	while (std::regex_search(it, ns.cend(), match, u_template)) {
+        Pnames.push_back(match[1]); 
+        it = match.suffix().first;
+    }
+
+    if(Pnames.size() == 0) {  throw std::runtime_error("[VARVALUE] provided 0 user names"); }
+    
+    //EFactory Ebuilder { *BManager::context() };
+    //PFactory Pbuilder { *BManager::context() };
+
+    for(auto id: Pnames){
+     /*   Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::sub);
+        //Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24042");
+        Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://127.0.0.1:24042");
+        Ebuilder.opt(ElemOPT::SOCKOPT, ZMQ_SUBSCRIBE, topic.c_str(), topic.size());
+        Ebuilder.AddUnpackMethod(Dnd_MP::UnpackMethod_Setup);
+        auto RecvStart = Ebuilder.build();*/
+    }
+}
+
+void 
+Dnd_MP::UnpackMethod(zmq::message_t &message, std::any &data){
+   
+
+    std::string msg_str(static_cast<char*>(message.data()), message.size());
+    auto& data_ = std::any_cast<Dnd_MP&>(data);
+    
+    data_.Processed_Data = data_.GetFromString("MESSAGE",msg_str);
+}
+
+void 
+Dnd_MP::PackMethod(zmq::message_t &message, std::any &data){
+   
+}
+
 };

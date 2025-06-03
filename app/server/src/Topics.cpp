@@ -15,6 +15,7 @@ BTopics::CreateDNDThread(DndTopic data){
     //receiving element
     Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::sub);
     Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24042");
+    //Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://127.0.0.1:24042");
     Ebuilder.opt(ElemOPT::SOCKOPT, ZMQ_SUBSCRIBE, topic.c_str(), topic.size());
     Ebuilder.AddUnpackMethod(DndTopic::UnpackMethod);
     auto RecvStart = Ebuilder.build();
@@ -27,11 +28,54 @@ BTopics::CreateDNDThread(DndTopic data){
     //Send element
     Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::push);
     Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24041");
+    //Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://127.0.0.1:24041");
     Ebuilder.AddPackMethod(DndTopic::PackMethod);
     auto sendReply = Ebuilder.build();
 
     //build the pipeline for dnd session
     Pbuilder.UserDataType<DndTopic>(data);
+    Pipeline_W pipeline = Pbuilder.build();
+
+    //enable and push back so it can start being used
+    pipeline.SetIsContinous(true);
+    pipelines.push_back( std::move(pipeline) );
+
+    pipeline.ElementLink(
+        std::move(RecvStart),
+        std::move(processreply),
+        std::move(sendReply)
+    );
+
+    BManager::instance().EnableSingle(pipeline);
+}
+
+void 
+BTopics::CreateMPThread(Dnd_MP data){
+     //std::string topic = data.recvtopic()+ data.GetID() +">";
+    std::string topic = data.recvtopic()+ data.GetID() +">";
+    std::cout << "SUBTOPIC = " << topic << std::endl;
+    //receiving element
+    Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::sub);
+    Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24042");
+    //Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://127.0.0.1:24042");
+    Ebuilder.opt(ElemOPT::SOCKOPT, ZMQ_SUBSCRIBE, topic.c_str(), topic.size());
+    Ebuilder.AddUnpackMethod(Dnd_MP::UnpackMethod);
+    auto RecvStart = Ebuilder.build();
+
+    //Data process element
+    Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::filter);
+    Ebuilder.opt(ElemOPT::SOCK_CB, Dnd_MP::Process);
+    auto processreply = Ebuilder.build();
+
+    //Send element
+    Ebuilder.opt(ElemOPT::SOCKCREATE, Element_type::push);
+    Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://benternet.pxl-ea-ict.be:24041");
+    //Ebuilder.opt(ElemOPT::ENDPOINT, "tcp://127.0.0.1:24041");
+    Ebuilder.AddPackMethod(Dnd_MP::PackMethod);
+    auto sendReply = Ebuilder.build();
+
+    //build the pipeline for dnd session
+    Pbuilder.UserDataType<Dnd_MP>(data);
     Pipeline_W pipeline = Pbuilder.build();
 
     //enable and push back so it can start being used
@@ -60,7 +104,7 @@ Topic_template::GetCurrentTimestamp() {
     return timestamp_stream.str();
 }
 
-std::string 
+string 
 Topic_template::GetFromString(const std::string& key, const std::string& haystack) {
     std::vector<std::string> parts;
     std::stringstream ss(haystack);

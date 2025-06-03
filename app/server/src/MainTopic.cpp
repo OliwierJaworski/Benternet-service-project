@@ -29,9 +29,10 @@ json MainTopic_info = {
                 "\033[1;34m!last_heartbeat\033[0m: \033[1;32mShows the last heartbeat timestamp (Function type).\033[0m\n"
             },
             { "!about", "\n\033[1;34mService for creating/joining user made lobbies. to play DND with an AI dungeon master\033[0m" },
-            { "!help", "\n\\033[1;34m[ CORRECT USAGE: ], topic>session>!**command** : for commands: !commands\033[0m" },
+            { "!help", "\n\033[1;34m[ CORRECT USAGE: ], topic>session>!**option** : for commands: !commands\033[0m\n" }, // - / removed
             { "!time", "**FUNCTYPE**" },
             { "!play!", "**FUNCTYPE**" },
+            { "!playMP!", "**FUNCTYPE**" },
             { "!delim", "\n\\033[1;34m>\033[0m" }, // won't be allowed yet to change delim
             { "!ActiveUsers", 0 },
             { "!Sessions", json::array({
@@ -39,10 +40,13 @@ json MainTopic_info = {
             }) },
             { "!id", "\n\033[1;34mDND-lobby\033[0m" },
             { "!status", "\n\\033[1;34mactive\033[0m" },
-            { "!last_heartbeat", "**FUNCTYPE**" }
+            { "!last_heartbeat", "**FUNCTYPE**" },
+            { "!history", "**FUNCTYPE**" }
         }}
     }}
 };
+
+std::vector<string> MainTopic::Cmd_History;
 
 void 
 BTopics::CreateMainThread(){
@@ -95,6 +99,7 @@ MainTopic::UnpackMethod(zmq::message_t & message, std::any & data){
     std::string msg_str(static_cast<char*>(message.data()), message.size());
     std::cout << "[ received ] ----[ " << msg_str <<" ]----\n";
     auto& data_ = std::any_cast<MainTopic&>(data);
+    data_.err = 0;
     
     try {
         std::string msg_str(static_cast<char*>(message.data()), message.size());
@@ -131,7 +136,7 @@ MainTopic::filter_cb(Bbuffer& forwarded_data){
     
     std::cout << "hello from callback!\n";
 
-    std::cout << forwarded_data.GetUdataV().type().name() << "\n";
+    //std::cout << forwarded_data.GetUdataV().type().name() << "\n";
     auto& data_ = std::any_cast<MainTopic&>(forwarded_data.GetUdataV());
     if(data_.err){
         return;
@@ -175,8 +180,8 @@ MainTopic::pick_option(const string& optionstring, json& info_){
     }
 
     for (auto& [key, val] : info_["benternet"]["commands"].items()) {
-        std::cout << "[pick_option] Checking key: " << key << "\n";
         if (key == optionstring) {
+            std::cout << "[pick_option] Checking key: " << key << "\n";
             return optionstring;
         }
     }
@@ -186,14 +191,18 @@ MainTopic::pick_option(const string& optionstring, json& info_){
 
 void
 MainTopic::ExecCommand(std::string& command){
-   string value =info["benternet"]["commands"][command].get<std::string>();
+   string value = info["benternet"]["commands"][command].get<std::string>();
    
+   if(Cmd_History.size() > 20){ Cmd_History.erase(Cmd_History.begin()); }
+    string tmp = command + ", "+ GetLastHeartbeat();
+    Cmd_History.push_back(tmp);
+
    if(value.find("**FUNCTYPE**") != string::npos){
         command_table[command](*this);
+
    }else{
-    
         Processed_Data = value;
-        std::cout << "forwarded: "<<Processed_Data << "\n";
+        std::cout << "forwarded: "<< Processed_Data << "\n";
    }
 }
 
@@ -203,9 +212,10 @@ MainTopic::CT_play(MainTopic& data){
     DndTopic topicData;
 
     for(int i=0;i<5;i++){
-        session_id += static_cast<char>((rand() % (126 - 32 + 1) + 32));
+        char c = rand() % 52;
+        session_id += (c < 26) ? ('A' + c) : ('a' + (c - 26));
     }
-    session_id += '?';
+
     topicData.SetID( data.GetID() );
     topicData.SetSession(session_id);
     topicData.SetLastHeartbeat();
@@ -215,6 +225,34 @@ MainTopic::CT_play(MainTopic& data){
 
     //return the unique session ID 
     data.Processed_Data += "\n\033[1;34mYour unique session id is: \033[0m\033[1;32m" + session_id + "\033[0m\n";
+}
+
+void 
+MainTopic::CT_playMP(MainTopic& data){
+   std::string session_id{""};
+   Dnd_MP topicData;
+
+   for(int i=0;i<5;i++){
+        char c = rand() % 52;
+        session_id += (c < 26) ? ('A' + c) : ('a' + (c - 26));
+    }
+
+    topicData.SetID( data.GetID() );
+    topicData.SetSession(session_id);
+    topicData.SetLastHeartbeat();
+
+    BTopics::instance().CreateMPThread( std::move(topicData) );
+
+    data.Processed_Data += "\n\033[1;34m Please provide the names of the users as follows[name0(GameMaster)],[name1(player)],[...] on the following topic: \033[0m\033[1;32m" + session_id + "\033[0m\n";
+}
+
+void 
+MainTopic::CT_history(MainTopic& data){
+    data.Processed_Data += "\n\033[1;34m";
+    for(auto Hidx : Cmd_History){
+        data.Processed_Data += Hidx + ",\n";
+    }
+    data.Processed_Data += "\033[0m\033[1;32m";
 }
 
 };
